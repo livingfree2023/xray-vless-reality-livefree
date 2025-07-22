@@ -3,7 +3,7 @@
 # Check if running as root
 if [ "$EUID" -ne 0 ]; then
     echo "错误: 请以root身份运行此脚本"
-    echo "请使用: sudo bash $0"
+    echo -e "请使用: sudo -i 后执行 \n bash <(curl -sL https://github.com/livingfree2023/xray-vless-reality-livefree/raw/refs/heads/main/install.sh)"
     exit 1
 fi
 
