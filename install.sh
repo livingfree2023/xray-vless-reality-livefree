@@ -1,3 +1,11 @@
+#!/bin/bash
+
+# Check if running as root
+if [ "$EUID" -ne 0 ]; then
+    echo "错误: 请以root身份运行此脚本"
+    echo "请使用: sudo bash $0"
+    exit 1
+fi
 
 red='\e[91m'
 green='\e[92m'
