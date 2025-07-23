@@ -2,7 +2,7 @@
 
 # Constants and Configuration
 
-readonly VERSION="20250723" 
+readonly SCRIPT_VERSION="20250723" 
 readonly LOG_FILE="0key.log"
 readonly URL_FILE="0key.url"
 readonly DEFAULT_PORT=443
@@ -166,7 +166,7 @@ show_banner() {
   echo "██║     ██║╚██╗ ██╔╝██╔══╝  ██╔══╝  ██╔══██╗██╔══╝  ██╔══╝  "
   echo "███████╗██║ ╚████╔╝ ███████╗██║     ██║  ██║███████╗███████╗"
   echo "╚══════╝╚═╝  ╚═══╝  ╚══════╝╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝"
-  echo "              项目地址，欢迎点星 / STAR IT PLEASE              "
+  echo "           项目地址，欢迎点星 / STAR IT PLEASE                 "
   echo -e "${cyan}https://github.com/livingfree2023/xray-vless-reality-livefree${none}"
   echo -e "本脚本支持带参数执行, 不带参数将直接无敌 / This script supports parameter execution. See ${cyan}--help${none} for more"
 
@@ -420,7 +420,7 @@ EOF
 
 # Function to display help message
 show_help() {
-  echo -e "当前版本 / Version: ${cyan}${VERSION}${none} "
+  echo -e "当前版本 / Version: ${cyan}${SCRIPT_VERSION}${none} "
   echo "使用方法: $0 [options] / Usage"
   echo "选项: / Options"
   echo "  --netstack=4|6     使用IPv4或IPv6 (默认: 自动检测) / Use IPv4 or IPv6"
