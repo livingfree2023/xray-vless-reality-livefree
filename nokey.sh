@@ -141,6 +141,7 @@ install_dependencies() {
     # Check for missing tools
     for tool in "${tools[@]}"; do
         if ! command -v "$tool" >/dev/null 2>&1; then
+            log2file "$tool is missing"
             local -n pkg_map="package_map_${manager//-/_}"
             install_packages+=("${pkg_map[$tool]}")
         fi
@@ -155,7 +156,8 @@ install_dependencies() {
 
     # Install packages
     local install_cmd="${os_package_command[$manager]}"
-    eval "$install_cmd ${install_packages[*]} net-tools" >> "$LOG_FILE" 2>&1
+    log2file "$install_cmd ${install_packages[*]}  ... "
+    eval "$install_cmd ${install_packages[*]} " >> "$LOG_FILE" 2>&1
 
     echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
 }
@@ -534,9 +536,9 @@ main() {
     SECONDS=0
     check_root    
     show_banner
+    install_dependencies # the next function needs curl, in debian 9 curl is not shipped
     detect_network_interfaces
     parse_args "$@"
-    install_dependencies
     install_xray
     configure_xray
     enable_bbr
