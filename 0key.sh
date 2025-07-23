@@ -1,6 +1,8 @@
 #!/bin/bash
 
 # Constants and Configuration
+
+readonly VERSION="20250723" 
 readonly LOG_FILE="0key.log"
 readonly URL_FILE="0key.url"
 readonly DEFAULT_PORT=443
@@ -56,7 +58,7 @@ detect_network_interfaces() {
 }
 
 generate_uuid() {
-    local uuid=$(cat /proc/sys/kernel/random/uuid)
+    cat /proc/sys/kernel/random/uuid
 }
 
 generate_shortid() {
@@ -89,7 +91,7 @@ install_dependencies() {
         return 0
     fi
 
-    echo -n -e "${yellow}Starting preparation... / 开始准备工作 ... ${none}" | tee -a "$LOG_FILE"
+    echo -n -e "${yellow}Starting preparation / 开始准备工作 ... ${none}" | tee -a "$LOG_FILE"
 
     # Install based on OS
     case "$os" in
@@ -116,11 +118,14 @@ install_dependencies() {
 
 
 install_xray() {
-    echo -n -e "${yellow}Xray installation... / 开始，Xray官方脚本安装...${none}" | tee -a "$LOG_FILE"
+echo -n -e "${yellow}开始，Xray-Core官方脚本安装 / Start Xray-Core installation ... ${none}" | tee -a "$LOG_FILE"
+
+
     bash -c "$(curl -sL https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install >> "$LOG_FILE" 2>&1
     echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
 
-    echo -n -e "${yellow}Updating geodata... / 加速，更新geodata...${none}" | tee -a "$LOG_FILE"
+    echo -n -e "${yellow}加速，更新geodata / Updating geodata ... ${none}" | tee -a "$LOG_FILE"
+
     # Check if geodata files exist and are recent (less than 1 week old)
     local geoip="/usr/local/share/xray/geoip.dat"
     local geosite="/usr/local/share/xray/geosite.dat"
@@ -139,17 +144,10 @@ install_xray() {
 
 }
 
-generate_keys() {
-    local uuid="$1"
-    local private_key=$(echo -n "${uuid}" | md5sum | head -c 32 | base64 -w 0 | tr '+/' '-_' | tr -d '=')
-    local tmp_key=$(echo -n "${private_key}" | xargs xray x25519 -i)
-    # echo "$(echo ${tmp_key} | awk '{print $3}')" # private key
-    # echo "$(echo ${tmp_key} | awk '{print $6}')" # public key
-    # echo "$(echo -n ${uuid} | sha1sum | head -c 16)" # shortid
-}
+
 
 enable_bbr() {
-    echo -n -e "${yellow}Finishing, Enabling BBR / 撞线，打开BBR ...${none}" | tee -a "$LOG_FILE"
+    echo -n -e "${yellow}最后，打开BBR / Finishing, Enabling BBR ... ${none}" | tee -a "$LOG_FILE"
     sed -i '/net.ipv4.tcp_congestion_control/d' /etc/sysctl.conf
     sed -i '/net.core.default_qdisc/d' /etc/sysctl.conf
     echo "net.ipv4.tcp_congestion_control = bbr" >> /etc/sysctl.conf
@@ -167,9 +165,10 @@ show_banner() {
   echo "██║     ██║╚██╗ ██╔╝██╔══╝  ██╔══╝  ██╔══██╗██╔══╝  ██╔══╝  "
   echo "███████╗██║ ╚████╔╝ ███████╗██║     ██║  ██║███████╗███████╗"
   echo "╚══════╝╚═╝  ╚═══╝  ╚══════╝╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝"
-  echo "                                                            "
-  echo -e "${cyan}https://github.com/livingfree2023/xray-vless-reality-livefree${none} "
-  echo "This script supports parameter execution see --help / 本脚本支持带参数执行, 不带参数将直接无敌"
+  echo "              项目地址，欢迎点星 / STAR IT PLEASE              "
+  echo -e "${cyan}https://github.com/livingfree2023/xray-vless-reality-livefree${none}"
+  echo -e "本脚本支持带参数执行, 不带参数将直接无敌 / This script supports parameter execution. See ${cyan}--help${none} for more"
+
 }
 
 parse_args() {
@@ -190,7 +189,7 @@ parse_args() {
               ip=${IPv6}
               ;;
             *)
-              error "Error: Invalid netstack value / 错误: 无效的网络协议栈值"
+              error "错误: 无效的网络协议栈值 / Error: Invalid netstack value"
               show_help
               exit 1
               ;;
@@ -226,7 +225,7 @@ configure_xray() {
         netstack=6
         ip=${IPv6}
       else
-        error "No public IP detected / 没有获取到公共IP"
+        error "没有获取到公共IP / No public IP detected"
         exit 1
       fi
     fi
@@ -241,7 +240,8 @@ configure_xray() {
           break
         fi
       done
-      log2file "Random unused port found / 找到一个空闲随机端口 $port"
+      log2file "找到一个空闲随机端口 / Random unused port found: $port"
+
     fi
 
     # Xray UUID
@@ -255,33 +255,32 @@ configure_xray() {
       keys=$(xray x25519)
       private_key=$(echo "$keys" | awk '/Private key:/ {print $3}')
       public_key=$(echo "$keys" | awk '/Public key:/ {print $3}')
-      log2file "${yellow} 私钥 (PrivateKey) = ${cyan}${private_key}${none}"
-      log2file "${yellow} 公钥 (PublicKey) = ${cyan}${public_key}${none}" 
+      log2file "私钥 (PrivateKey) = ${cyan}${private_key}${none}"
+      log2file "公钥 (PublicKey) = ${cyan}${public_key}${none}" 
     fi
 
     # ShortID
     if [[ -z $shortid ]]; then
       shortid=$(generate_shortid)
-      log2file "${yellow} ShortID = ${cyan}${shortid}${none}" 
+      log2file "ShortID = ${cyan}${shortid}${none}" 
     fi
 
     # 目标网站
     if [[ -z $domain ]]; then
-      log2file "Preparing domain / 准备 ${magenta}域名${none}" 
       [ -z "$domain" ] && domain="learn.microsoft.com"
-      log2file "${yellow} SNI = ${cyan}$domain${none}"
+      log2file "SNI = ${cyan}$domain${none}"
     fi
 
-    log2file "${yellow} 网络栈netstack = ${cyan}${netstack}${none}" 
-    log2file "${yellow} 本机IP = ${cyan}${ip}${none}"
-    log2file "${yellow} 端口Port = ${cyan}${port}${none}" 
-    log2file "${yellow} 用户UUID = $cyan${uuid}${none}" 
-    log2file "${yellow} 域名SNI = ${cyan}$domain${none}" 
+    log2file "网络栈netstack = ${cyan}${netstack}${none}" 
+    log2file "本机IP = ${cyan}${ip}${none}"
+    log2file "端口Port = ${cyan}${port}${none}" 
+    log2file "用户UUID = $cyan${uuid}${none}" 
+    log2file "域名SNI = ${cyan}$domain${none}" 
 
 
     # 配置config.json
     
-    echo -n -e "${yellow}Configuring / 配置 /usr/local/etc/xray/config.json ...${none}"
+    echo -n -e "${yellow}Configuring / 配置 /usr/local/etc/xray/config.json ... ${none}"
     cat > /usr/local/etc/xray/config.json <<-EOF
 { // VLESS + Reality
   "log2file": {
@@ -412,7 +411,7 @@ configure_xray() {
 EOF
     echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
     # 重启 Xray
-    echo -n -e "${yellow}Restarting Xray / 重启 Xray${none}..."
+    echo -n -e "${yellow}重启 Xray 服务 / Restarting Xray Service ... ${none}"
     service xray restart
     echo -e "[${green}OK${none}]" | tee -a  "$LOG_FILE"
 }
@@ -420,16 +419,15 @@ EOF
 
 # Function to display help message
 show_help() {
-  # Get version from git commit date
-  version="20250723" 
-  echo -e "${yellow}Version / 版本: ${cyan}${version}${none}"
-  echo "Usage / 使用方法: $0 [options]"
-  echo "Options / 选项:"
-  echo "  --netstack=4|6     Use IPv4 or IPv6 / 使用IPv4或IPv6 (默认: 自动检测)" 
-  echo "  --port=NUMBER      Set port number / 设置端口号 (默认: 随机)"
-  echo "  --domain=DOMAIN    Set SNI domain / 设置SNI域名 (默认: learn.microsoft.com)"
-  echo "  --uuid=STRING      Set UUID / 设置UUID (默认: 自动生成)"
-  echo "  --help            Show this help message / 显示此帮助信息"
+  echo -e "当前版本 / Version: ${cyan}${VERSION}${none} "
+  echo "使用方法: $0 [options] / Usage"
+  echo "选项: / Options"
+  echo "  --netstack=4|6     使用IPv4或IPv6 (默认: 自动检测) / Use IPv4 or IPv6"
+  echo "  --port=NUMBER      设置端口号 (默认: 随机) / Set port number"
+  echo "  --domain=DOMAIN    设置SNI域名 (默认: learn.microsoft.com) / Set SNI domain"
+  echo "  --uuid=STRING      设置UUID (默认: 自动生成) / Set UUID"
+  echo "  --help             显示此帮助信息 / Show this help message"
+
   exit 0
 }
 
@@ -439,28 +437,29 @@ output_results(){
     # SpiderX
     spiderx=""
 
-    echo -e "${green}[All Done! / 大功告成！]${none}" | tee -a "$LOG_FILE"
-    log2file  "Address / 地址 = $cyan${ip}${none}" 
-    log2file  "Port / 端口 = ${cyan}${port}${none}" 
-    log2file  "User ID (UUID) / 用户ID = $cyan${uuid}${none}"
-    log2file  "Flow Control / 流控 = ${cyan}xtls-rprx-vision${none}" 
-    log2file  "Encryption / 加密 = ${cyan}none${none}" 
-    log2file  "Network Protocol / 传输协议 = ${cyan}tcp${none}" 
-    log2file  "Header Type / 伪装类型 = ${cyan}none${none}" 
-    log2file  "Transport Security / 底层传输安全 = ${cyan}reality${none}"
-    log2file  "SNI = ${cyan}${domain}${none}" 
-    log2file  "Fingerprint / 指纹 = ${cyan}${fingerprint}${none}" 
-    log2file  "PublicKey / 公钥 = ${cyan}${public_key}${none}"
-    log2file  "ShortId = ${cyan}${shortid}${none}"
-    log2file  "SpiderX = ${cyan}${spiderx}${none}" 
+    echo -e "${green}[大功告成！ / All Done!]${none}" | tee -a "$LOG_FILE"
+    log2file "地址 / Address = $cyan${ip}${none}"
+    log2file "端口 / Port = ${cyan}${port}${none}"
+    log2file "用户ID / User ID (UUID) = $cyan${uuid}${none}"
+    log2file "流控 / Flow Control = ${cyan}xtls-rprx-vision${none}"
+    log2file "加密 / Encryption = ${cyan}none${none}"
+    log2file "传输协议 / Network Protocol = ${cyan}tcp${none}"
+    log2file "伪装类型 / Header Type = ${cyan}none${none}"
+    log2file "底层传输安全 / Transport Security = ${cyan}reality${none}"
+    log2file "SNI = ${cyan}${domain}${none}"
+    log2file "指纹 / Fingerprint = ${cyan}${fingerprint}${none}"
+    log2file "公钥 / PublicKey = ${cyan}${public_key}${none}"
+    log2file "ShortId = ${cyan}${shortid}${none}"
+    log2file "SpiderX = ${cyan}${spiderx}${none}"
+
     if [[ $netstack == "6" ]]; then
       ip=[$ip]
     fi
-    vless_reality_url="vless://${uuid}@${ip}:${port}?flow=xtls-rprx-vision&encryption=none&type=tcp&security=reality&sni=${domain}&fp=${fingerprint}&pbk=${public_key}&sid=${shortid}&spx=${spiderx}&#VLESS_R_${ip}"
+    vless_reality_url="vless://${uuid}@${ip}:${port}?flow=xtls-rprx-vision&encryption=none&type=tcp&security=reality&sni=${domain}&fp=${fingerprint}&pbk=${public_key}&sid=${shortid}&spx=${spiderx}&#0KEY_${ip}"
 
-    echo "For QR code, run / 如果需要二维码，复制以下命令" | tee -a "$LOG_FILE"
-    echo "qrencode -t UTF8 -r 0key.url" | tee -a "$LOG_FILE"
-    echo "Node information saved in / 链接存在 0key.url, complete logs / 运行详细记录在 $LOG_FILE" | tee -a "$LOG_FILE"
+    echo -n "For QR code, run / 如果需要二维码，复制以下命令: " | tee -a "$LOG_FILE"
+    echo "qrencode -t UTF8 -r $URL_FILE" | tee -a "$LOG_FILE"
+    echo "VLESS URL saved in / 链接存在 $URL_FILE, complete logs / 运行详细记录在 $LOG_FILE" | tee -a "$LOG_FILE"
         
     echo -e "Your link / 你的链接: " | tee -a "$LOG_FILE"
     echo -e "${cyan}"
