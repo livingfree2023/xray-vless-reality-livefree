@@ -1,9 +1,9 @@
 # 说明 
 > 项目地址: https://github.com/livingfree2023/xray-vless-reality-nokey
 
-各大有名的一键脚本现在越来越臃肿，又大又全，早就忘记了初心，变的不伦不类，各种提示新手看不懂，老手看的累，
+各大有名的一键脚本现在越来越臃肿，又大又全，早就忘记了初心
 
-自己把自己的手搓经验撮成一个真的一键脚本，分享一下，
+自己把自己的手搓经验撮成一个真的一键脚本，分享一下
 
 这个魔改的一键脚本，比一键更激进，那我该叫什么？0键？其实还是要按回车键的，但是那些要按101个键的脚本都还叫一键脚本，我只好tiǎn着脸叫“零键”(NOKEY)了
 
@@ -38,5 +38,6 @@ bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release
 
 # 用你的STAR告诉我你有用过 STAR! :)
 
+错误难免，请多指教
 
 _Fork于 https://github.com/crazypeace/  感谢原作_
