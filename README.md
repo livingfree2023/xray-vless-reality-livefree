@@ -31,13 +31,20 @@ bash -c  "$(curl -sL https://raw.githubusercontent.com/livingfree2023/xray-vless
 ```
 
 
+> 如果你只是想换个端口，换个uuid，或者买的新鸡急着去测youtube/speedtest，这个脚本可能非常适合你
+
+![image](https://img.imgdd.com/ce4a1b42-9219-4957-95df-1a67a844b162.png)
+
+
+错误难免，请多指教，我希望能做出适合所有linux版本的，但是自己财力有限，欢迎大佬借我机器调试
+
+
 # 卸载xray-core （本脚本无影无形无需卸载）
 ```
 bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ remove --purge
 ```
 
-# 用你的STAR告诉我你有用过 STAR! :)
 
-错误难免，请多指教
-
-_Fork于 https://github.com/crazypeace/  感谢原作_
+_感谢 [crazypeace](https://github.com/crazypeace/)_
+_感谢 [@RPRX](https://github.com/RPRX)_
+_感谢 [ProjectX](https://github.com/XTLS)_
