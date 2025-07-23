@@ -148,7 +148,7 @@ echo -n -e "${yellow}开始，Xray-Core官方脚本安装 / Start Xray-Core inst
 
 
 enable_bbr() {
-    echo -n -e "${yellow}最后，打开BBR / Finishing, Enabling BBR ... ${none}" | tee -a "$LOG_FILE"
+    echo -n -e "${yellow}最最后，打开BBR / Finishing, Enabling BBR ... ${none}" | tee -a "$LOG_FILE"
     sed -i '/net.ipv4.tcp_congestion_control/d' /etc/sysctl.conf
     sed -i '/net.core.default_qdisc/d' /etc/sysctl.conf
     echo "net.ipv4.tcp_congestion_control = bbr" >> /etc/sysctl.conf
@@ -287,7 +287,7 @@ configure_xray() {
 
     # 配置config.json
     
-    echo -n -e "${yellow}Configuring / 配置 /usr/local/etc/xray/config.json ... ${none}"
+    echo -n -e "${yellow}快好了，手搓 / Configuring /usr/local/etc/xray/config.json ... ${none}"
     cat > /usr/local/etc/xray/config.json <<-EOF
 { // VLESS + Reality
   "log2file": {
@@ -418,7 +418,7 @@ configure_xray() {
 EOF
     echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
     # 重启 Xray
-    echo -n -e "${yellow}重启 Xray 服务 / Restarting Xray Service ... ${none}"
+    echo -n -e "${yellow}最后，重启 Xray 服务 / Restarting Xray Service ... ${none}"
     service xray restart
     echo -e "[${green}OK${none}]" | tee -a  "$LOG_FILE"
 }
@@ -444,7 +444,6 @@ output_results(){
     # SpiderX
     spiderx=""
 
-    echo -e "${green}[大功告成！ / All Done!]${none}" | tee -a "$LOG_FILE"
     log2file "地址 / Address = $cyan${ip}${none}"
     log2file "端口 / Port = ${cyan}${port}${none}"
     log2file "用户ID / User ID (UUID) = $cyan${uuid}${none}"
@@ -467,12 +466,13 @@ output_results(){
     echo -n "如果需要二维码，复制以下命令: / For QR code, run" | tee -a "$LOG_FILE"
     echo "qrencode -t UTF8 -r $URL_FILE" | tee -a "$LOG_FILE"
 
+    echo -e -n "${yellow}检查服务状态 / Checking Service ... ${none}" | tee -a "$LOG_FILE"
     if systemctl is-active --quiet "$SERVICE_NAME"; then
-      echo -e "${green}服务正常运行 / Service is active${none}" | tee -a "$LOG_FILE"
+      echo -e "[${green}服务正常 / Service Active${none}]" | tee -a "$LOG_FILE"
     else
-      error "服务未运行 / Service is not active${none}" 
+      error "服务未运行 / Service is not active" 
       systemctl status "$SERVICE_NAME" | tee -a "$LOG_FILE"
-      error "运行详细记录在 $LOG_FILE / See complete logs" | tee -a "$LOG_FILE"
+      error "运行详细记录在 $LOG_FILE / See complete logs"
       exit 1
     fi
 
