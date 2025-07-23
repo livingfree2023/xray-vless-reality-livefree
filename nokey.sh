@@ -76,7 +76,7 @@ install_dependencies() {
         . /etc/os-release
         os=$ID
     else
-        error "Cannot detect OS / 无法识别操作系统"
+        error "无法识别操作系统 / Cannot detect OS"
         return 1
     fi
 
@@ -88,11 +88,11 @@ install_dependencies() {
     done
 
     if [ ${#missing_tools[@]} -eq 0 ]; then
-        echo -e "${yellow}Tool check  / 工具链检查 ... ${none}[${green}OK${none}]" | tee -a "$LOG_FILE"
+        echo -e "${yellow}工具链检查 / Tool check ... ${none}[${green}OK${none}]" | tee -a "$LOG_FILE"
         return 0
     fi
 
-    echo -n -e "${yellow}Starting preparation / 开始准备工作 ... ${none}" | tee -a "$LOG_FILE"
+    echo -n -e "${yellow}开始准备工作 / Starting preparation ... ${none}" | tee -a "$LOG_FILE"
 
     # Install based on OS
     case "$os" in
@@ -110,7 +110,7 @@ install_dependencies() {
             apk add --no-cache "${missing_tools[@]}" >> "$LOG_FILE" 2>&1
             ;;
         *)
-            log2file "Unsupported OS: $os / 不支持的操作系统"
+            log2file "不支持的操作系统 / Unsupported OS: $os"
             return 1
             ;;
     esac
@@ -148,7 +148,7 @@ echo -n -e "${yellow}开始，Xray-Core官方脚本安装 / Start Xray-Core inst
 
 
 enable_bbr() {
-    echo -n -e "${yellow}最最后，打开BBR / Finishing, Enabling BBR ... ${none}" | tee -a "$LOG_FILE"
+    echo -n -e "${yellow}最后，打开BBR / Finishing, Enabling BBR ... ${none}" | tee -a "$LOG_FILE"
     sed -i '/net.ipv4.tcp_congestion_control/d' /etc/sysctl.conf
     sed -i '/net.core.default_qdisc/d' /etc/sysctl.conf
     echo "net.ipv4.tcp_congestion_control = bbr" >> /etc/sysctl.conf
@@ -419,7 +419,7 @@ configure_xray() {
 EOF
     echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
     # 重启 Xray
-    echo -n -e "${yellow}最后，重启 Xray 服务 / Restarting Xray Service ... ${none}"
+    echo -n -e "${yellow}冲刺，开启 Xray 服务 / Starting Xray Service ... ${none}"
     service xray restart
     echo -e "[${green}OK${none}]" | tee -a  "$LOG_FILE"
 }
@@ -464,7 +464,7 @@ output_results(){
     fi
     vless_reality_url="vless://${uuid}@${ip}:${port}?flow=xtls-rprx-vision&encryption=none&type=tcp&security=reality&sni=${domain}&fp=${fingerprint}&pbk=${public_key}&sid=${shortid}&spx=${spiderx}&#0KEY_${ip}"
 
-    echo -n "如果需要二维码，复制以下命令: / For QR code, run" | tee -a "$LOG_FILE"
+    echo -n "${yellow}二维码生成命令: / For QR code, run: ${none}" | tee -a "$LOG_FILE"
     echo "qrencode -t UTF8 -r $URL_FILE" | tee -a "$LOG_FILE"
 
     echo -e -n "${yellow}检查服务状态 / Checking Service ... ${none}" | tee -a "$LOG_FILE"
@@ -478,7 +478,7 @@ output_results(){
     fi
 
     
-    echo -e "你的链接: / Your link" | tee -a "$LOG_FILE"
+    echo -e "你的作品: / Your link" | tee -a "$LOG_FILE"
 
     echo -e "${magenta}"
     echo -e "${vless_reality_url}" | tee -a "$LOG_FILE" | tee "$URL_FILE"
