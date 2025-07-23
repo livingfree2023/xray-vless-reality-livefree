@@ -482,13 +482,15 @@ output_results(){
     echo -e "${magenta}"
     echo -e "${vless_reality_url}" | tee -a "$LOG_FILE" | tee "$URL_FILE"
     echo -e "${none}"
-    echo -e "---------- ${cyan}Live Free & Fight Autocracy${none} -------------" | tee -a "$LOG_FILE"
+    echo -e "---------- ${cyan}live free or die hard${none} -------------" | tee -a "$LOG_FILE"
 
 }
 # Main function
 main() {
     check_root
+    SECONDS=0
     show_banner
+    
     detect_network_interfaces
     
     parse_args "$@"
@@ -498,8 +500,9 @@ main() {
 
     configure_xray
     enable_bbr
-
+    echo -e "总用时 / Elapsed Time: ${cyan}$SECONDS${none} 秒，打败了全国99%的男人"
     output_results
+    
 }
 
 main "$@"
