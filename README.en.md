@@ -1,7 +1,5 @@
-[中文](README.md) | [English](README.en.md)
----
+# 📦 [项目说明](README.md) | [Project](README.en.md) | [اطلاعات پروژه](README.fa.md)
 
-# 📦 Project Info  
 > Repository: https://github.com/livingfree2023/xray-vless-reality-nokey
 
 Many popular "one-click" scripts nowadays have become ~~bloated~~ feature-rich, ~~lost their original purpose~~ very advanced.
