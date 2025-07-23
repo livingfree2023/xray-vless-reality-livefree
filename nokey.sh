@@ -64,11 +64,12 @@ generate_uuid() {
 
 generate_shortid() {
     # Generate 8 random bytes and convert to hex
-    head -c 8 /dev/urandom | xxd -p
+    head -c 8 /dev/urandom | od -An -tx1 | tr -d ' \n'
 }
 
 install_dependencies() {
-    local tools=("curl" "xxd" "qrencode" "lsof")
+    #todo: "qrencode" should be a flag controlled feature
+    local tools=("curl" "lsof")
     local missing_tools=()
     local install_packages=()
 
