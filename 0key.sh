@@ -457,15 +457,15 @@ output_results(){
     fi
     vless_reality_url="vless://${uuid}@${ip}:${port}?flow=xtls-rprx-vision&encryption=none&type=tcp&security=reality&sni=${domain}&fp=${fingerprint}&pbk=${public_key}&sid=${shortid}&spx=${spiderx}&#0KEY_${ip}"
 
-    echo -n "For QR code, run / 如果需要二维码，复制以下命令: " | tee -a "$LOG_FILE"
+    echo -n "如果需要二维码，复制以下命令: / For QR code, run" | tee -a "$LOG_FILE"
     echo "qrencode -t UTF8 -r $URL_FILE" | tee -a "$LOG_FILE"
-    echo "VLESS URL saved in / 链接存在 $URL_FILE, complete logs / 运行详细记录在 $LOG_FILE" | tee -a "$LOG_FILE"
-        
-    echo -e "Your link / 你的链接: " | tee -a "$LOG_FILE"
-    echo -e "${cyan}"
+    echo "链接存在 $URL_FILE, 运行详细记录在 $LOG_FILE / VLESS URL saved in, complete logs" | tee -a "$LOG_FILE"
+    echo -e "你的链接: / Your link" | tee -a "$LOG_FILE"
+
+    echo -e "${magenta}"
     echo -e "${vless_reality_url}" | tee -a "$LOG_FILE" | tee "$URL_FILE"
     echo -e "${none}"
-    echo "---------- Live Free & Fight Autocracy -------------" | tee -a "$LOG_FILE"
+    echo "---------- ${magenta}Live Free & Fight Autocracy${none} -------------" | tee -a "$LOG_FILE"
 
 }
 # Main function
