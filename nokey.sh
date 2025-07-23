@@ -477,32 +477,28 @@ output_results(){
     fi
 
     
-    echo -e "舒服了 / Done: " | tee -a "$LOG_FILE"
+    echo -e "${yellow}舒服了 / Done: ${none}" | tee -a "$LOG_FILE"
 
     echo -e "${magenta}"
     echo -e "${vless_reality_url}" | tee -a "$LOG_FILE" | tee "$URL_FILE"
     echo -e "${none}"
-    echo -e "---------- ${cyan}live free or die hard${none} -------------" | tee -a "$LOG_FILE"
+    
 
 }
 # Main function
 main() {
-    check_root
     SECONDS=0
+    check_root    
     show_banner
-    
     detect_network_interfaces
-    
     parse_args "$@"
-    
     install_dependencies
     install_xray
-
     configure_xray
     enable_bbr
-    echo -e "总用时 / Elapsed Time: ${cyan}$SECONDS${none} 秒，打败了全国99%的男人"
     output_results
-    
+    echo -e "${yellow}总用时 / Elapsed Time:${none}  ${cyan}$SECONDS 秒${none}"
+    echo -e "---------- ${cyan}live free or die hard${none} -------------" | tee -a "$LOG_FILE"
 }
 
 main "$@"
