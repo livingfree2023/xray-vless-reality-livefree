@@ -16,7 +16,7 @@
 2. 自动跳过不必要的geodata更新（7天内）
 3. 按照官方命令生成UUID/KeyPair
 4. 自动找随机空闲端口
-5. 多linux版本自动适配（ubuntu/debian/Rocky/CentOS/Fedora/已测,alpine没机器测）
+5. 多linux版本自动适配（ubuntu/debian/Rocky/CentOS/Fedora/Alma已测,alpine没机器测）
 6. xray-core直接用原装正版脚本安装
 7. 可带参数指定协议栈，UUID，SNI，端口
 8. 可查看帮助 --help
