@@ -119,9 +119,7 @@ install_dependencies() {
 
 
 install_xray() {
-echo -n -e "${yellow}开始，Xray-Core官方脚本安装 / Start Xray-Core installation ... ${none}" | tee -a "$LOG_FILE"
-
-
+    echo -n -e "${yellow}开始，安装XRAY / Install XRAY ... ${none}" | tee -a "$LOG_FILE"
     bash -c "$(curl -sL https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install >> "$LOG_FILE" 2>&1
     echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
 
@@ -419,7 +417,7 @@ configure_xray() {
 EOF
     echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
     # 重启 Xray
-    echo -n -e "${yellow}冲刺，开启 Xray 服务 / Starting Xray Service ... ${none}"
+    echo -n -e "${yellow}冲刺，开启服务 / Starting Service ... ${none}"
     service xray restart
     echo -e "[${green}OK${none}]" | tee -a  "$LOG_FILE"
 }
@@ -462,7 +460,8 @@ output_results(){
     if [[ $netstack == "6" ]]; then
       ip=[$ip]
     fi
-    vless_reality_url="vless://${uuid}@${ip}:${port}?flow=xtls-rprx-vision&encryption=none&type=tcp&security=reality&sni=${domain}&fp=${fingerprint}&pbk=${public_key}&sid=${shortid}&spx=${spiderx}&#0KEY_${ip}"
+    
+    vless_reality_url="vless://${uuid}@${ip}:${port}?flow=xtls-rprx-vision&encryption=none&type=tcp&security=reality&sni=${domain}&fp=${fingerprint}&pbk=${public_key}&sid=${shortid}&spx=${spiderx}&#NOKEY_${ip}"
 
     log2file "${yellow}二维码生成命令: / For QR code, run: ${none}" 
     log2file "qrencode -t UTF8 -r $URL_FILE" | tee -a "$LOG_FILE"
@@ -478,12 +477,12 @@ output_results(){
     fi
 
     
-    echo -e "完事了 / U R Done: " | tee -a "$LOG_FILE"
+    echo -e "舒服了 / Done: " | tee -a "$LOG_FILE"
 
     echo -e "${magenta}"
     echo -e "${vless_reality_url}" | tee -a "$LOG_FILE" | tee "$URL_FILE"
     echo -e "${none}"
-    echo -e "---------- ${magenta}Live Free & Fight Autocracy${none} -------------" | tee -a "$LOG_FILE"
+    echo -e "---------- ${cyan}Live Free & Fight Autocracy${none} -------------" | tee -a "$LOG_FILE"
 
 }
 # Main function
