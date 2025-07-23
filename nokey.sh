@@ -5,7 +5,7 @@
 readonly SCRIPT_VERSION="20250723" 
 readonly LOG_FILE="nokey.log"
 readonly URL_FILE="nokey.url"
-readonly DEFAULT_PORT=443
+#readonly DEFAULT_PORT=443
 readonly DEFAULT_DOMAIN="learn.microsoft.com"
 readonly GITHUB_URL="https://github.com/livingfree2023/xray-vless-reality-nokey"
 readonly GITHUB_CMD="bash <(curl -sL https://raw.githubusercontent.com/livingfree2023/xray-vless-reality-livefree/refs/heads/main/nokey.sh)"
