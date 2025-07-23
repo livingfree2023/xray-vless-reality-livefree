@@ -464,12 +464,12 @@ output_results(){
     fi
     vless_reality_url="vless://${uuid}@${ip}:${port}?flow=xtls-rprx-vision&encryption=none&type=tcp&security=reality&sni=${domain}&fp=${fingerprint}&pbk=${public_key}&sid=${shortid}&spx=${spiderx}&#0KEY_${ip}"
 
-    echo -n "${yellow}二维码生成命令: / For QR code, run: ${none}" | tee -a "$LOG_FILE"
-    echo "qrencode -t UTF8 -r $URL_FILE" | tee -a "$LOG_FILE"
+    log2file "${yellow}二维码生成命令: / For QR code, run: ${none}" 
+    log2file "qrencode -t UTF8 -r $URL_FILE" | tee -a "$LOG_FILE"
 
     echo -e -n "${yellow}检查服务状态 / Checking Service ... ${none}" | tee -a "$LOG_FILE"
     if systemctl is-active --quiet "$SERVICE_NAME"; then
-      echo -e "[${green}服务正常 / Service Active${none}]" | tee -a "$LOG_FILE"
+      echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
     else
       error "服务未运行 / Service is not active" 
       systemctl status "$SERVICE_NAME" | tee -a "$LOG_FILE"
@@ -478,7 +478,7 @@ output_results(){
     fi
 
     
-    echo -e "你的作品: / Your link" | tee -a "$LOG_FILE"
+    echo -e "完事了 / U R Done: " | tee -a "$LOG_FILE"
 
     echo -e "${magenta}"
     echo -e "${vless_reality_url}" | tee -a "$LOG_FILE" | tee "$URL_FILE"
