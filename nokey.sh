@@ -7,8 +7,8 @@ readonly LOG_FILE="0key.log"
 readonly URL_FILE="0key.url"
 readonly DEFAULT_PORT=443
 readonly DEFAULT_DOMAIN="learn.microsoft.com"
-readonly GITHUB_URL="https://github.com/livingfree2023/xray-vless-reality-livefree"
-readonly GITHUB_CMD="bash <(curl -sL https://raw.githubusercontent.com/livingfree2023/xray-vless-reality-livefree/refs/heads/main/0key.sh)"
+readonly GITHUB_URL="https://github.com/livingfree2023/xray-vless-reality-nokey"
+readonly GITHUB_CMD="bash <(curl -sL https://raw.githubusercontent.com/livingfree2023/xray-vless-reality-livefree/refs/heads/main/nokey.sh)"
 readonly SERVICE_NAME="xray.service"
 
 # Color definitions
@@ -159,16 +159,19 @@ enable_bbr() {
 }
 
 show_banner() {
-  echo "                                                            "
-  echo "██╗     ██╗██╗   ██╗███████╗███████╗██████╗ ███████╗███████╗" 
-  echo "██║     ██║██║   ██║██╔════╝██╔════╝██╔══██╗██╔════╝██╔════╝"
-  echo "██║     ██║██║   ██║█████╗  █████╗  ██████╔╝█████╗  █████╗  "
-  echo "██║     ██║╚██╗ ██╔╝██╔══╝  ██╔══╝  ██╔══██╗██╔══╝  ██╔══╝  "
-  echo "███████╗██║ ╚████╔╝ ███████╗██║     ██║  ██║███████╗███████╗"
-  echo "╚══════╝╚═╝  ╚═══╝  ╚══════╝╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝"
-  echo "           项目地址，欢迎点星 / STAR IT PLEASE                 "
-  echo -e "${cyan}https://github.com/livingfree2023/xray-vless-reality-livefree${none}"
-  echo -e "本脚本支持带参数执行, 不带参数将直接无敌 / This script supports parameter execution. See ${cyan}--help${none} for more"
+  
+    echo " ____   ___  __  _   ___ __ __ ";
+    echo "|    \ /   \|  |/ ] /  _|  |  |";
+    echo "|  _  |     |  ' / /  [_|  |  |";
+    echo "|  |  |  O  |    \|    _|  ~  |";
+    echo "|  |  |     |     |   [_|___, |";
+    echo "|  |  |     |  .  |     |     |";
+    echo "|__|__|\___/|__|\_|_____|____/ ";
+    echo "                               ";
+
+    echo "项目地址，欢迎点星 / STAR  PLEASE "
+    echo -e "${cyan}$GITHUB_URL${none}"
+    echo -e "本脚本支持带参数执行, 不带参数将直接无敌 / See ${cyan}--help${none} for parameters"
 
 }
 
