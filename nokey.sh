@@ -3,8 +3,8 @@
 # Constants and Configuration
 
 readonly SCRIPT_VERSION="20250723" 
-readonly LOG_FILE="0key.log"
-readonly URL_FILE="0key.url"
+readonly LOG_FILE="nokey.log"
+readonly URL_FILE="nokey.url"
 readonly DEFAULT_PORT=443
 readonly DEFAULT_DOMAIN="learn.microsoft.com"
 readonly GITHUB_URL="https://github.com/livingfree2023/xray-vless-reality-nokey"
