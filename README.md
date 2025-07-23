@@ -6,8 +6,16 @@
 
 也不需要域名，适合会手搓的超高级用户，或者纯小白
 
+在root下执行：
+
 ```
 bash <(curl -sL https://raw.githubusercontent.com/livingfree2023/xray-vless-reality-livefree/refs/heads/main/install.sh)
+```
+
+
+# 卸载
+```
+bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ remove --purge
 ```
 
 Fork于 https://github.com/crazypeace/  感谢原作
