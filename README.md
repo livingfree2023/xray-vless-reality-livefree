@@ -16,7 +16,7 @@
 2. 自动跳过不必要的geodata更新（7天内）
 3. 按照官方命令生成UUID/KeyPair
 4. 自动找随机空闲端口
-5. 多linux版本自动适配（ubuntu/debian/Rocky/CentOS/Fedora/Alma已测,alpine没机器测）
+5. 原则上做了几乎所有linux版本的自动适配，但是机器有限，只测了ubuntu22/debian11/Rocky9.2/CentOS7.6/Fedora30/Alma9.2这些
 6. xray-core直接用原装正版脚本安装
 7. 可带参数指定协议栈，UUID，SNI，端口
 8. 可查看帮助 --help
@@ -24,7 +24,9 @@
 10. 可生成二维码
 11. 暂时想到这么多……
 
-食用方式：在root下执行
+# 食用方式
+
+在root下执行
 
 ```
 bash -c  "$(curl -sL https://raw.githubusercontent.com/livingfree2023/xray-vless-reality-nokey/refs/heads/main/nokey.sh)"
@@ -39,7 +41,8 @@ bash -c  "$(curl -sL https://raw.githubusercontent.com/livingfree2023/xray-vless
 错误难免，请多指教，我希望能做出适合所有linux版本的，但是自己财力有限，欢迎大佬借我机器调试
 
 
-# 卸载xray-core （本脚本无影无形无需卸载）
+# 卸载xray-core （XTLS官方脚本）
+
 ```
 bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ remove --purge
 ```
