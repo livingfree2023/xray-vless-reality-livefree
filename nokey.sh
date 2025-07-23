@@ -68,54 +68,98 @@ generate_shortid() {
 }
 
 install_dependencies() {
-    local tools=("curl" "jq" "qrencode" "lsof")
+    local tools=("curl" "xxd" "qrencode" "lsof")
     local missing_tools=()
+    local install_packages=()
 
-    # Detect OS type
+    declare -A os_package_command=(
+        [apt]="apt update && apt install -y"
+        [yum]="yum install -y"
+        [dnf]="dnf install -y"
+        [pacman]="pacman -Sy --noconfirm"
+        [apk]="apk add --no-cache"
+        [zypper]="zypper install -y"
+        [xbps-install]="xbps-install -Sy"
+    )
+
+    declare -A package_map_apt=(
+        ["curl"]="curl" ["xxd"]="vim-common"
+        ["qrencode"]="qrencode" ["lsof"]="lsof"
+    )
+    declare -A package_map_yum=(
+        ["curl"]="curl" ["xxd"]="vim-common"
+        ["qrencode"]="qrencode" ["lsof"]="lsof"
+    )
+    declare -A package_map_dnf=(
+        ["curl"]="curl" ["xxd"]="vim-common"
+        ["qrencode"]="qrencode" ["lsof"]="lsof"
+    )
+    declare -A package_map_pacman=(
+        ["curl"]="curl" ["xxd"]="vim"
+        ["qrencode"]="qrencode" ["lsof"]="lsof"
+    )
+    declare -A package_map_apk=(
+        ["curl"]="curl" ["xxd"]="xxd"
+        ["qrencode"]="qrencode" ["lsof"]="lsof"
+    )
+    declare -A package_map_zypper=(
+        ["curl"]="curl" ["xxd"]="vim"
+        ["qrencode"]="qrencode" ["lsof"]="lsof"
+    )
+    declare -A package_map_xbps_install=(
+        ["curl"]="curl" ["xxd"]="xxd"
+        ["qrencode"]="qrencode" ["lsof"]="lsof"
+    )
+
+    # Detect package manager
+    local manager=""
     if [[ -f /etc/os-release ]]; then
         . /etc/os-release
-        os=$ID
-    else
-        error "无法识别操作系统 / Cannot detect OS"
+        for candidate in "${!os_package_command[@]}"; do
+            if [[ "$ID" == "$candidate" || "$ID_LIKE" == *"$candidate"* ]]; then
+                manager=$candidate
+                break
+            fi
+        done
+    fi
+
+    # Fallback detection using which
+    if [[ -z "$manager" ]]; then
+        for candidate in "${!os_package_command[@]}"; do
+            if command -v "$candidate" >/dev/null 2>&1; then
+                manager=$candidate
+                break
+            fi
+        done
+    fi
+
+    if [[ -z "$manager" ]]; then
+        error "无法识别包管理器 / Cannot detect package manager"
         return 1
     fi
 
-    # Check for each tool
+    # Check for missing tools
     for tool in "${tools[@]}"; do
         if ! command -v "$tool" >/dev/null 2>&1; then
-            missing_tools+=("$tool")
+            local -n pkg_map="package_map_${manager//-/_}"
+            install_packages+=("${pkg_map[$tool]}")
         fi
     done
 
-    if [ ${#missing_tools[@]} -eq 0 ]; then
+    if [[ ${#install_packages[@]} -eq 0 ]]; then
         echo -e "${yellow}工具链检查 / Tool check ... ${none}[${green}OK${none}]" | tee -a "$LOG_FILE"
         return 0
     fi
 
     echo -n -e "${yellow}开始准备工作 / Starting preparation ... ${none}" | tee -a "$LOG_FILE"
 
-    # Install based on OS
-    case "$os" in
-        debian|ubuntu)
-            apt update >> "$LOG_FILE" 2>&1
-            apt install -y "${missing_tools[@]}" net-tools >> "$LOG_FILE" 2>&1
-            ;;
-        centos|fedora|rhel)
-            yum install -y "${missing_tools[@]}" net-tools >> "$LOG_FILE" 2>&1
-            ;;
-        arch)
-            pacman -Sy --noconfirm "${missing_tools[@]}" >> "$LOG_FILE" 2>&1
-            ;;
-        alpine)
-            apk add --no-cache "${missing_tools[@]}" >> "$LOG_FILE" 2>&1
-            ;;
-        *)
-            log2file "不支持的操作系统 / Unsupported OS: $os"
-            return 1
-            ;;
-    esac
+    # Install packages
+    local install_cmd="${os_package_command[$manager]}"
+    eval "$install_cmd ${install_packages[*]} net-tools" >> "$LOG_FILE" 2>&1
+
     echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
 }
+
 
 
 install_xray() {
@@ -418,7 +462,7 @@ EOF
     echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
     # 重启 Xray
     echo -n -e "${yellow}冲刺，开启服务 / Starting Service ... ${none}"
-    service xray restart
+    service xray restart >> "$LOG_FILE" 2>&1
     echo -e "[${green}OK${none}]" | tee -a  "$LOG_FILE"
 }
 
