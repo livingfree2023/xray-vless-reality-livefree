@@ -1,4 +1,4 @@
-# 说明 
+# 📦 [项目说明](README.md) | [Project](README.en.md) | [اطلاعات پروژه](README.fa.md)
 > 项目地址: https://github.com/livingfree2023/xray-vless-reality-nokey
 
 各大有名的一键脚本大现在越来越~~臃肿~~功能完善，~~早就忘记了初心~~非常高级
