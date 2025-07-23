@@ -9,6 +9,7 @@ readonly DEFAULT_PORT=443
 readonly DEFAULT_DOMAIN="learn.microsoft.com"
 readonly GITHUB_URL="https://github.com/livingfree2023/xray-vless-reality-livefree"
 readonly GITHUB_CMD="bash <(curl -sL https://raw.githubusercontent.com/livingfree2023/xray-vless-reality-livefree/refs/heads/main/0key.sh)"
+readonly SERVICE_NAME="xray.service"
 
 # Color definitions
 readonly red='\e[91m'
@@ -459,13 +460,23 @@ output_results(){
 
     echo -n "如果需要二维码，复制以下命令: / For QR code, run" | tee -a "$LOG_FILE"
     echo "qrencode -t UTF8 -r $URL_FILE" | tee -a "$LOG_FILE"
-    echo "链接存在 $URL_FILE, 运行详细记录在 $LOG_FILE / VLESS URL saved in, complete logs" | tee -a "$LOG_FILE"
+
+    if systemctl is-active --quiet "$SERVICE_NAME"; then
+      echo -e "${green}服务正常运行 / Service is active${none}" | tee -a "$LOG_FILE"
+    else
+      error "服务未运行 / Service is not active${none}" 
+      systemctl status "$SERVICE_NAME" | tee -a "$LOG_FILE"
+      error "运行详细记录在 $LOG_FILE / See complete logs" | tee -a "$LOG_FILE"
+      exit 1
+    fi
+
+    
     echo -e "你的链接: / Your link" | tee -a "$LOG_FILE"
 
     echo -e "${magenta}"
     echo -e "${vless_reality_url}" | tee -a "$LOG_FILE" | tee "$URL_FILE"
     echo -e "${none}"
-    echo "---------- ${magenta}Live Free & Fight Autocracy${none} -------------" | tee -a "$LOG_FILE"
+    echo -e "---------- ${magenta}Live Free & Fight Autocracy${none} -------------" | tee -a "$LOG_FILE"
 
 }
 # Main function
