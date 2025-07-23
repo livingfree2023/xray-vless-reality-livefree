@@ -1,30 +1,32 @@
 # 📦 [项目说明](README.md) | [Project](README.en.md) | [اطلاعات پروژه](README.fa.md)
 > 项目地址: https://github.com/livingfree2023/xray-vless-reality-nokey
 
-各大有名的一键脚本现在~~越来越臃肿~~功能非常完善，~~早就忘记了初心~~选择非常灵活
+各大有名的一键脚本现在~~越来越臃肿，早就忘记了初心~~功能非常强大，选择非常灵活
 
 自己把自己的手搓经验撮成一个真的一键脚本，分享一下
 
-这个魔改的一键脚本，比一键更激进，那我该叫什么？0键？其实还是要按回车键的，但是那些要按101个键的脚本都还叫一键脚本，我只好tiǎn着脸叫“零键”(NOKEY)了
+这个魔改的一键脚本，比一键更激进，那我该叫什么？零键？其实还是要按回车键的，但是那些要按101个键的脚本都还叫一键脚本，我只好tiǎn着脸叫“零键”(NOKEY)了
 
 不需要域名，既适合会手搓的超级用户，也适合无需过多信息的纯小白，没有花里胡哨，快是我的强项，干就完了
 
 一个命令下去就等结果就好了，不罗嗦，不打扰，速度超快，敢和任何脚本PK ^-^ 输了告诉我，我再改进
 
 默认不带参数直接从新机器开始到装完BBR+FQ，魔改功能为
-1. 自动跳过不必要的apt更新
-2. 自动跳不必要的geodata更新
+1. 自动跳过不必要的系统环境更新
+2. 自动跳过不必要的geodata更新（7天内）
 3. 按照官方命令生成UUID/KeyPair
 4. 自动找随机空闲端口
-5. 多linux版本自动适配（有些没测试）
+5. 原则上做了几乎所有linux版本的自动适配，但是机器有限，只测了ubuntu22/debian11/Rocky9.2/CentOS7.6/Fedora30/Alma9.2这些
 6. xray-core直接用原装正版脚本安装
 7. 可带参数指定协议栈，UUID，SNI，端口
-8. 可看帮助 --help
+8. 可查看帮助 --help
 9. 只输出极简步骤，详细log输出到log文件
 10. 可生成二维码
 11. 暂时想到这么多……
 
-食用方式：在root下执行
+# 食用方式
+
+在root下执行
 
 ```
 bash -c  "$(curl -sL https://raw.githubusercontent.com/livingfree2023/xray-vless-reality-nokey/refs/heads/main/nokey.sh)"
@@ -39,7 +41,8 @@ bash -c  "$(curl -sL https://raw.githubusercontent.com/livingfree2023/xray-vless
 错误难免，请多指教，我希望能做出适合所有linux版本的，但是自己财力有限，欢迎大佬借我机器调试
 
 
-# 卸载xray-core （本脚本无影无形无需卸载）
+# 卸载xray-core （XTLS官方脚本）
+
 ```
 bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ remove --purge
 ```
