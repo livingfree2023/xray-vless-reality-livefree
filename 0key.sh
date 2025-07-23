@@ -240,7 +240,7 @@ configure_xray() {
           break
         fi
       done
-      log2file "找到一个空闲随机端口 / Random unused port found: $port"
+      log2file "找到一个空闲随机端口，如果有防火墙需要放行 / Random unused port found, if firewall enabled, add tcp rules for: ${cyan}$port${none}"
 
     fi
 
