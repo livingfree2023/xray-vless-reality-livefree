@@ -1,7 +1,7 @@
 # 📦 [项目说明](README.md) | [Project](README.en.md) | [اطلاعات پروژه](README.fa.md)
+
 > 项目地址: https://github.com/livingfree2023/xray-vless-reality-nokey
-
-
+> 
 > 如果你只是想换个端口，换个uuid，或者买的新鸡急着去测youtube/speedtest，这个脚本可能非常适合你
 
 ![image](https://img.imgdd.com/ce4a1b42-9219-4957-95df-1a67a844b162.png)
@@ -51,12 +51,12 @@ sh)" @ --force
 错误难免，请多指教，我希望能做出适合所有linux版本的，但是自己财力有限，欢迎大佬借我机器调试
 
 
-# 卸载xray-core （XTLS官方脚本，非Alpine）
-
+# 卸载xray-core 
+> XTLS官方脚本，非Alpine
 ```
 bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ remove --purge
 ```
-Alpine
+> Alpine
 ```
 rc-service xray stop
 rc-update del xray    
