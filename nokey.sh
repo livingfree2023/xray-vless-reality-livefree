@@ -10,6 +10,12 @@ readonly DEFAULT_DOMAIN="learn.microsoft.com"
 readonly GITHUB_URL="https://github.com/livingfree2023/xray-vless-reality-nokey"
 readonly GITHUB_CMD="bash <(curl -sL https://raw.githubusercontent.com/livingfree2023/xray-vless-reality-livefree/refs/heads/main/nokey.sh)"
 readonly SERVICE_NAME="xray.service"
+readonly SERVICE_NAME_ALPINE="xray"
+
+readonly GITHUB_XRAY_OFFICIAL_SCRIPT_URL="https://raw.githubusercontent.com/XTLS/Xray-install/main/install-release.sh"
+readonly GITHUB_XRAY_OFFICIAL_SCRIPT_ALPINE_URL="https://github.com/XTLS/Xray-install/raw/main/alpinelinux/install-release.sh"
+readonly GITHUB_XRAY_OFFICIAL_SCRIPT="install-release.sh"
+
 
 # Color definitions
 readonly red='\e[91m'
@@ -43,19 +49,13 @@ check_root() {
 }
 
 detect_network_interfaces() {
-    #InFaces=($(ls /sys/class/net/ | grep -E '^(eth|ens|eno|esp|enp|venet|vif)'))
-    #for i in "${InFaces[@]}"; do
-        # Public_IPv4=$(curl -4s --interface "$i" -m 2 https://www.cloudflare.com/cdn-cgi/trace | grep -oP "ip=\K.*$")
-        # Public_IPv6=$(curl -6s --interface "$i" -m 2 https://www.cloudflare.com/cdn-cgi/trace | grep -oP "ip=\K.*$")
     
-        Public_IPv4=$(curl -4s -m 2 https://www.cloudflare.com/cdn-cgi/trace | grep -oP "ip=\K.*$")
-        Public_IPv6=$(curl -6s -m 2 https://www.cloudflare.com/cdn-cgi/trace | grep -oP "ip=\K.*$")
-        
-        [[ -n "$Public_IPv4" ]] && IPv4="$Public_IPv4"
-        [[ -n "$Public_IPv6" ]] && IPv6="$Public_IPv6"
-      echo "Detected interface / 找到网卡: $Public_IPv4 $Public_IPv6" >> "$LOG_FILE"
-    #done
+    Public_IPv4=$(curl -4s -m 2 https://www.cloudflare.com/cdn-cgi/trace | awk -F= '/^ip=/{print $2}')
+    Public_IPv6=$(curl -6s -m 2 https://www.cloudflare.com/cdn-cgi/trace | awk -F= '/^ip=/{print $2}')
     
+    [[ -n "$Public_IPv4" ]] && IPv4="$Public_IPv4"
+    [[ -n "$Public_IPv6" ]] && IPv6="$Public_IPv6"
+    echo "Detected interface / 找到网卡: $Public_IPv4 $Public_IPv6" >> "$LOG_FILE"
 }
 
 generate_uuid() {
@@ -68,13 +68,16 @@ generate_shortid() {
 }
 
 install_dependencies() {
+
+    echo -n -e "${yellow}开始准备工作 / Starting Preparation ... ${none}" | tee -a "$LOG_FILE"
+
     #todo: "qrencode" should be a flag controlled feature
     local tools=("curl" "lsof")
     local missing_tools=()
     local install_packages=()
 
     declare -A os_package_command=(
-        [apt]="apt update && apt install -y"
+        [apt]="apt install -y"
         [yum]="yum install -y"
         [dnf]="dnf install -y"
         [pacman]="pacman -Sy --noconfirm"
@@ -83,52 +86,12 @@ install_dependencies() {
         [xbps-install]="xbps-install -Sy"
     )
 
-    declare -A package_map_apt=(
-        ["curl"]="curl" ["xxd"]="vim-common"
-        ["qrencode"]="qrencode" ["lsof"]="lsof"
-    )
-    declare -A package_map_yum=(
-        ["curl"]="curl" ["xxd"]="vim-common"
-        ["qrencode"]="qrencode" ["lsof"]="lsof"
-    )
-    declare -A package_map_dnf=(
-        ["curl"]="curl" ["xxd"]="vim-common"
-        ["qrencode"]="qrencode" ["lsof"]="lsof"
-    )
-    declare -A package_map_pacman=(
-        ["curl"]="curl" ["xxd"]="vim"
-        ["qrencode"]="qrencode" ["lsof"]="lsof"
-    )
-    declare -A package_map_apk=(
-        ["curl"]="curl" ["xxd"]="xxd"
-        ["qrencode"]="qrencode" ["lsof"]="lsof"
-    )
-    declare -A package_map_zypper=(
-        ["curl"]="curl" ["xxd"]="vim"
-        ["qrencode"]="qrencode" ["lsof"]="lsof"
-    )
-    declare -A package_map_xbps_install=(
-        ["curl"]="curl" ["xxd"]="xxd"
-        ["qrencode"]="qrencode" ["lsof"]="lsof"
-    )
-
-    # Detect package manager
-    local manager=""
-    if [[ -f /etc/os-release ]]; then
-        . /etc/os-release
-        for candidate in "${!os_package_command[@]}"; do
-            if [[ "$ID" == "$candidate" || "$ID_LIKE" == *"$candidate"* ]]; then
-                manager=$candidate
-                break
-            fi
-        done
-    fi
-
     # Fallback detection using which
     if [[ -z "$manager" ]]; then
         for candidate in "${!os_package_command[@]}"; do
             if command -v "$candidate" >/dev/null 2>&1; then
                 manager=$candidate
+                log2file "found manager $manager in fallback"
                 break
             fi
         done
@@ -139,57 +102,60 @@ install_dependencies() {
         return 1
     fi
 
+    local install_cmd="${os_package_command[$manager]}"
+
     # Check for missing tools
     for tool in "${tools[@]}"; do
         if ! command -v "$tool" >/dev/null 2>&1; then
             log2file "$tool is missing"
-            local -n pkg_map="package_map_${manager//-/_}"
-            install_packages+=("${pkg_map[$tool]}")
+            eval "$install_cmd" "$tool"  >> "$LOG_FILE" 2>&1
         fi
     done
-
-    if [[ ${#install_packages[@]} -eq 0 ]]; then
-        echo -e "${yellow}工具链检查 / Tool check ... ${none}[${green}OK${none}]" | tee -a "$LOG_FILE"
-        return 0
-    fi
-
-    echo -n -e "${yellow}开始准备工作 / Starting preparation ... ${none}" | tee -a "$LOG_FILE"
-
-    # Install packages
-    local install_cmd="${os_package_command[$manager]}"
-    log2file "$install_cmd ${install_packages[*]}  ... "
-    eval "$install_cmd ${install_packages[*]} " >> "$LOG_FILE" 2>&1
-
+    
     echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
+
 }
-
-
 
 install_xray() {
     echo -n -e "${yellow}开始，安装XRAY / Install XRAY ... ${none}" | tee -a "$LOG_FILE"
-    bash -c "$(curl -sL https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install >> "$LOG_FILE" 2>&1
-    echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
-
-    echo -n -e "${yellow}加速，更新geodata / Updating geodata ... ${none}" | tee -a "$LOG_FILE"
-
-    # Check if geodata files exist and are recent (less than 1 week old)
-    local geoip="/usr/local/share/xray/geoip.dat"
-    local geosite="/usr/local/share/xray/geosite.dat"
-    week_ago=$(date -d "-7 days" +%s)
-
-    if [[ -f "$geoip" && -f "$geosite" ]] && \
-       [[ $(stat -c %Y "$geoip") -gt $week_ago ]] && \
-       [[ $(stat -c %Y "$geosite") -gt $week_ago ]]; then
-        log2file "${green}Geodata files are up to date, skip download / geodata文件已存在，跳过下载节省鸡流${none}"
-        log2file "如果要更新geodata文件，请删除 /usr/local/share/xray/geoip.dat 和 /usr/local/share/xray/geosite.dat 然后重新运行脚本"
-        log2file "To force download geodata, rm /usr/local/share/xray/geoip.dat /usr/local/share/xray/geosite.dat and run the script again"
+    
+    if [ "$ID" = "alpine" ] || [ "$ID_LIKE" = "alpine" ]; then
+      log2file "Alpine OS: install xray"
+      ash $GITHUB_XRAY_OFFICIAL_SCRIPT >> $LOG_FILE 2>&1
+      rc-update add xray               >> $LOG_FILE 2>&1
+      rc-service xray start            >> $LOG_FILE 2>&1
     else
-        bash -c "$(curl -sL https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install-geodata >> "$LOG_FILE" 2>&1
+      bash $GITHUB_XRAY_OFFICIAL_SCRIPT install >> "$LOG_FILE" 2>&1
     fi
+
     echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
 
 }
 
+uninstall_in_alpine() {
+  rc-service xray stop        >> $LOG_FILE 2>&1
+  rc-update del xray          >> $LOG_FILE 2>&1
+  rm -rf "/usr/local/bin/xray"    >> $LOG_FILE 2>&1
+  rm -rf "/usr/local/share/xray"  >> $LOG_FILE 2>&1
+  rm -rf "/usr/local/etc/xray/"   >> $LOG_FILE 2>&1
+  rm -rf "/var/log/xray/"         >> $LOG_FILE 2>&1
+  rm -rf "/etc/init.d/xray"       >> $LOG_FILE 2>&1
+}
+
+uninstall_xray() {
+# Check if geodata files exist and are recent (less than 1 week old)
+    echo -n -e "${yellow}什么？要卸载重装？ / Force Reinstall ... ${none}" | tee -a "$LOG_FILE"
+    
+    if [ "$ID" = "alpine" ] || [ "$ID_LIKE" = "alpine" ]; then
+      log2file "Alpine OS: uninstall xray"
+      uninstall_in_alpine
+    else
+      bash $GITHUB_XRAY_OFFICIAL_SCRIPT remove --purge >> "$LOG_FILE" 2>&1
+    fi 
+
+    echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
+
+}
 
 
 enable_bbr() {
@@ -231,6 +197,9 @@ parse_args() {
         --help)
           show_help
           ;;
+        --force)
+          force_reinstall=1
+          ;;
         --netstack=*)
           case "${arg#*=}" in
             4)
@@ -267,6 +236,8 @@ parse_args() {
 
 }
 
+
+
 configure_xray() {
 
     # Set default values if not specified
@@ -282,19 +253,20 @@ configure_xray() {
         exit 1
       fi
     fi
+    
+    log2file "使用ip $ip" 
 
     # 端口
-    if [[ -z $port ]]; then
-      while true; do
-        # Generate random port between 10000-65535
-        port=$(shuf -i 10000-65535 -n 1)
-        # Check if port is in use
-        if ! lsof -i :$port > /dev/null 2>&1; then
+    if [[ -z $port ]]; then      
+      base=$((10000 + RANDOM % 50000))  # Start at a random offset
+      for i in $(seq 0 1000); do
+        port=$((base + i))
+        nc -z 127.0.0.1 $port 2>/dev/null || {
+          echo "$port" >> "$LOG_FILE"
           break
-        fi
+        }
       done
       log2file "找到一个空闲随机端口，如果有防火墙需要放行 / Random unused port found, if firewall enabled, add tcp rules for: ${cyan}$port${none}"
-
     fi
 
     # Xray UUID
@@ -484,7 +456,7 @@ show_help() {
   exit 0
 }
 
-output_results(){
+output_results() {
     # 指纹FingerPrint
     fingerprint="random"
     # SpiderX
@@ -514,15 +486,26 @@ output_results(){
     log2file "qrencode -t UTF8 -r $URL_FILE" | tee -a "$LOG_FILE"
 
     echo -e -n "${yellow}检查服务状态 / Checking Service ... ${none}" | tee -a "$LOG_FILE"
-    if systemctl is-active --quiet "$SERVICE_NAME"; then
-      echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
-    else
-      error "服务未运行 / Service is not active" 
-      systemctl status "$SERVICE_NAME" | tee -a "$LOG_FILE"
-      error "运行详细记录在 $LOG_FILE / See complete logs"
-      exit 1
-    fi
 
+    if [ "$ID" = "alpine" ] || [ "$ID_LIKE" = "alpine" ]; then
+      if rc-service "$SERVICE_NAME_ALPINE" status >/dev/null 2>&1; then 
+          echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
+      else
+        error "[服务未运行 / Service is not active]" 
+        service status "$SERVICE_NAME_ALPINE" | tee -a "$LOG_FILE"
+        error "运行详细记录在 $LOG_FILE / See complete logs"
+        exit 1
+      fi
+    else
+      if systemctl is-active --quiet "$SERVICE_NAME"; then
+        echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
+      else
+        error "服务未运行 / Service is not active" 
+        systemctl status "$SERVICE_NAME" | tee -a "$LOG_FILE"
+        error "运行详细记录在 $LOG_FILE / See complete logs"
+        exit 1
+      fi
+    fi
     
     echo -e "${yellow}舒服了 / Done: ${none}" | tee -a "$LOG_FILE"
 
@@ -532,14 +515,54 @@ output_results(){
     
 
 }
+
+download_official_script() {
+
+    # Download official script
+    echo -n -e "${yellow}下载，官方脚本 / Download Official Script ... ${none}" | tee -a "$LOG_FILE"
+
+    local url="$GITHUB_XRAY_OFFICIAL_SCRIPT_URL"
+
+    if [ "$ID" = "alpine" ] || [ "$ID_LIKE" = "alpine" ]; then
+        url="$GITHUB_XRAY_OFFICIAL_SCRIPT_ALPINE_URL"
+        log2file "Alpine OS detected"        
+    fi    
+
+    curl -sL "$url" -o "$GITHUB_XRAY_OFFICIAL_SCRIPT" >> "$LOG_FILE" 2>&1
+    if [[ -f "$GITHUB_XRAY_OFFICIAL_SCRIPT" ]]; then
+        echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
+    else
+        echo -e "[${red}FAILED${none}]" | tee -a "$LOG_FILE"
+        error "无法下载官方脚本，检查互联网链接，详细查看$LOG_FILE"
+        exit 1
+    fi
+
+}
+
 # Main function
 main() {
     SECONDS=0
-    check_root    
+    
+    check_root
+    
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+    else
+        error "无法识别的OS / Cannot determine OS."
+        exit 1
+    fi
+
     show_banner
     install_dependencies # the next function needs curl, in debian 9 curl is not shipped
+    download_official_script
+
     detect_network_interfaces
     parse_args "$@"
+    
+    if [[ $force_reinstall == 1 ]]; then
+      uninstall_xray
+    fi
+
     install_xray
     configure_xray
     enable_bbr
