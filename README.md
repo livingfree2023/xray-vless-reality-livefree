@@ -1,7 +1,12 @@
 # 📦 [项目说明](README.md) | [Project](README.en.md) | [اطلاعات پروژه](README.fa.md)
 > 项目地址: https://github.com/livingfree2023/xray-vless-reality-nokey
 
-各大有名的一键脚本现在~~越来越臃肿，早就忘记了初心~~功能非常强大，选择非常灵活
+
+> 如果你只是想换个端口，换个uuid，或者买的新鸡急着去测youtube/speedtest，这个脚本可能非常适合你
+
+![image](https://img.imgdd.com/ce4a1b42-9219-4957-95df-1a67a844b162.png)
+
+各大有名的一键脚本现在~~越来越臃肿，早就忘记了初心~~功能非常强大，选择非常多样
 
 自己把自己的手搓经验撮成一个真的一键脚本，分享一下
 
@@ -13,10 +18,10 @@
 
 默认不带参数直接从新机器开始到装完BBR+FQ，魔改功能为
 1. 自动跳过不必要的系统环境更新
-2. 自动跳过不必要的geodata更新（7天内）
+2. 自动跳过不必要的geodata更新（--force参数可强制更新）
 3. 按照官方命令生成UUID/KeyPair
-4. 自动找随机空闲端口
-5. 原则上做了几乎所有linux版本的自动适配，但是机器有限，只测了ubuntu22/debian11/Rocky9.2/CentOS7.6/Fedora30/Alma9.2这些
+4. 自动找随机空闲端口（10000以上，--port可指定任意）
+5. 尽可能自动适配所有linux版本
 6. xray-core直接用原装正版脚本安装
 7. 可带参数指定协议栈，UUID，SNI，端口
 8. 可查看帮助 --help
@@ -24,27 +29,42 @@
 10. 可生成二维码
 11. 暂时想到这么多……
 
+> 已测试包括：ubuntu22/debian11/Rocky9.2/CentOS7.6/Fedora30/Alma9.2/alpine3.22，欢迎测试提issue或者报告成功结果
+
 # 食用方式
 
 在root下执行
-
 ```
-bash -c  "$(curl -sL https://raw.githubusercontent.com/livingfree2023/xray-vless-reality-nokey/refs/heads/main/nokey.sh)"
+bash -c "$(curl -sL https://raw.githubusercontent.com/livingfree2023/xray-vless-reality-nokey/refs/heads/main/nokey.sh)"
 ```
-
-
-> 如果你只是想换个端口，换个uuid，或者买的新鸡急着去测youtube/speedtest，这个脚本可能非常适合你
-
-![image](https://img.imgdd.com/ce4a1b42-9219-4957-95df-1a67a844b162.png)
-
+如果没有ipv4（纯v6的鸡），同时如果warp了ipv4的出口，此时要指定入口为v6，否则连不通（因为v4优先级比v6高）
+```
+bash -c "$(curl -sL https://raw.githubusercontent.com/livingfree2023/xray-vless-reality-nokey/refs/heads/main/nokey.
+sh)" @ --netstack=6
+```
+强制更新xray 和 geodata
+```
+bash -c "$(curl -sL https://raw.githubusercontent.com/livingfree2023/xray-vless-reality-nokey/refs/heads/main/nokey.
+sh)" @ --force
+```
 
 错误难免，请多指教，我希望能做出适合所有linux版本的，但是自己财力有限，欢迎大佬借我机器调试
 
 
-# 卸载xray-core （XTLS官方脚本）
+# 卸载xray-core （XTLS官方脚本，非Alpine）
 
 ```
 bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ remove --purge
+```
+Alpine
+```
+rc-service xray stop
+rc-update del xray    
+rm -rf "/usr/local/bin/xray"  
+rm -rf "/usr/local/share/xray" 
+rm -rf "/usr/local/etc/xray/"  
+rm -rf "/var/log/xray/" 
+rm -rf "/etc/init.d/xray" 
 ```
 
 
