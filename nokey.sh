@@ -72,7 +72,7 @@ install_dependencies() {
     echo -n -e "${yellow}开始准备工作 / Starting Preparation ... ${none}" | tee -a "$LOG_FILE"
 
     #todo: "qrencode" should be a flag controlled feature
-    local tools=("curl" "lsof")
+    local tools=("curl")
     local missing_tools=()
     local install_packages=()
 
