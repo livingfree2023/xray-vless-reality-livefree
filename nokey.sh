@@ -451,6 +451,7 @@ show_help() {
   echo "  --port=NUMBER      设置端口号 (默认: 随机) / Set port number"
   echo "  --domain=DOMAIN    设置SNI域名 (默认: learn.microsoft.com) / Set SNI domain"
   echo "  --uuid=STRING      设置UUID (默认: 自动生成) / Set UUID"
+  echo "  --force            强制重装 / Force Reinstall"
   echo "  --help             显示此帮助信息 / Show this help message"
 
   exit 0
