@@ -33,15 +33,20 @@
 
 # 食用方式
 
-在root下执行
+> 首次使用后会添加一个alias `nokey`，下次直接执行`nokey`即可，比如`nokey --help`
+>
+ 
+1. 极速安装（在root下）
 ```
 bash -c "$(curl -sL https://raw.githubusercontent.com/livingfree2023/xray-vless-reality-nokey/refs/heads/main/nokey.sh)"
 ```
-如果没有ipv4（纯v6的鸡），同时如果warp了ipv4的出口，此时要指定入口为v6，否则连不通（因为v4优先级比v6高）
+
+2. 如果没有ipv4（纯v6的鸡），同时如果warp了ipv4的出口，此时要指定入口为v6，否则连不通（因为v4优先级比v6高）
 ```
 bash -c "$(curl -sL https://raw.githubusercontent.com/livingfree2023/xray-vless-reality-nokey/refs/heads/main/nokey.sh)" @ --netstack=6
 ```
-强制更新xray 和 geodata
+
+3. 强制更新xray 和 geodata
 ```
 bash -c "$(curl -sL https://raw.githubusercontent.com/livingfree2023/xray-vless-reality-nokey/refs/heads/main/nokey.sh)" @ --force
 ```
@@ -49,21 +54,12 @@ bash -c "$(curl -sL https://raw.githubusercontent.com/livingfree2023/xray-vless-
 错误难免，请多指教，我希望能做出适合所有linux版本的，但是自己财力有限，欢迎大佬借我机器调试
 
 
-# 卸载xray-core 
-> XTLS官方脚本，非Alpine
+## 卸载
+
 ```
-bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ remove --purge
+bash -c "$(curl -sL https://raw.githubusercontent.com/livingfree2023/xray-vless-reality-nokey/refs/heads/main/nokey.sh)" @ --remove
 ```
-> Alpine
-```
-rc-service xray stop
-rc-update del xray    
-rm -rf "/usr/local/bin/xray"  
-rm -rf "/usr/local/share/xray" 
-rm -rf "/usr/local/etc/xray/"  
-rm -rf "/var/log/xray/" 
-rm -rf "/etc/init.d/xray" 
-```
+
 
 
 _感谢 [crazypeace](https://github.com/crazypeace/)_
