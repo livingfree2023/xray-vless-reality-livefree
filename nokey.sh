@@ -120,12 +120,13 @@ install_xray() {
     echo -n -e "${yellow}开始，安装XRAY / Install XRAY ... ${none}" | tee -a "$LOG_FILE"
     
     if [ "$ID" = "alpine" ] || [ "$ID_LIKE" = "alpine" ]; then
-      log2file "Alpine OS: install xray"
+      log2file "Alpine OS: install xray formal release, alpine install script does not support pre-release"
       ash $GITHUB_XRAY_OFFICIAL_SCRIPT >> $LOG_FILE 2>&1
       rc-update add xray               >> $LOG_FILE 2>&1
       rc-service xray start            >> $LOG_FILE 2>&1
     else
-      bash $GITHUB_XRAY_OFFICIAL_SCRIPT install >> "$LOG_FILE" 2>&1
+      log2file "Installing latest xray including pre-release"
+      bash $GITHUB_XRAY_OFFICIAL_SCRIPT install --beta  >> "$LOG_FILE" 2>&1
     fi
 
     echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
@@ -241,6 +242,7 @@ parse_args() {
 configure_xray() {
 
     # Set default values if not specified
+    echo -n -e "${yellow}监测IP / Detect IP ... ${none}" | tee -a "$LOG_FILE"
     if [[ -z $netstack ]]; then
       if [[ -n "$IPv4" ]]; then
         netstack=4
@@ -253,10 +255,11 @@ configure_xray() {
         exit 1
       fi
     fi
-    
     log2file "使用ip $ip" 
+    echo -e "[${green}OK:$ip${none}]" | tee -a  "$LOG_FILE"
 
     # 端口
+    echo -n -e "${yellow}寻找一个无辜的端口 / Find a Random Unused Port  ... ${none}" | tee -a "$LOG_FILE"
     if [[ -z $port ]]; then      
       base=$((10000 + RANDOM % 50000))  # Start at a random offset
       for i in $(seq 0 1000); do
@@ -268,13 +271,17 @@ configure_xray() {
       done
       log2file "找到一个空闲随机端口，如果有防火墙需要放行 / Random unused port found, if firewall enabled, add tcp rules for: ${cyan}$port${none}"
     fi
+    echo -e "[${green}OK:$port${none}]" | tee -a  "$LOG_FILE"
 
+    echo -n -e "${yellow}生成一个UUID / Generate UUID  ... ${none}" | tee -a "$LOG_FILE"
     # Xray UUID
     if [[ -z $uuid ]]; then
         uuid=$(generate_uuid)
     fi
+    echo -e "[${green}OK${none}]" | tee -a  "$LOG_FILE"
 
     # x25519公私钥
+    echo -n -e "${yellow}生成一个密钥 / Generate x25519 keys  ... ${none}" | tee -a "$LOG_FILE"
     if [[ -z $private_key ]]; then
       # Generate keys using xray directly
       keys=$(xray x25519)
@@ -283,18 +290,43 @@ configure_xray() {
       log2file "私钥 (PrivateKey) = ${cyan}${private_key}${none}"
       log2file "公钥 (PublicKey) = ${cyan}${public_key}${none}" 
     fi
+    echo -e "[${green}OK${none}]" | tee -a  "$LOG_FILE"
+
 
     # ShortID
+    echo -n -e "${yellow}生成一个shortid / Generate shortid  ... ${none}" | tee -a "$LOG_FILE"
     if [[ -z $shortid ]]; then
       shortid=$(generate_shortid)
       log2file "ShortID = ${cyan}${shortid}${none}" 
     fi
+    echo -e "[${green}OK${none}]" | tee -a  "$LOG_FILE"
 
+    # 为了避免攻击者拿到 REALITY 客户端配置再等到未来的量子计算机破解 X25519 后对未来的 REALITY 
+    # 连接进行 MITM，REALITY 协议新增抗量子的 ML-DSA-65 签名验签机制：执行 xray mldsa65 生成 
+    # ML-DSA-65 密钥对，服务端持有 ML-DSA-65 私钥（配置名 mldsa65Seed ），处理连接时会对“cert's 
+    # signature + raw Client Hello + raw Server Hello”的组合进行额外签名并填到 cert's ExtraExtensions；
+    # 客户端若持有 ML-DSA-65 公钥（配置名 mldsa65Verify ），在原有的 REALITY 证书验证阶段会进行额外验证。
+    # 由于 ML-DSA-65 被设计为抵抗量子计算机，即使攻击者拿到了客户端配置即公钥，也无法在未来反推出私钥进而 MITM。
+    # https://github.com/XTLS/Xray-core/pull/4915
+    echo -n -e "${yellow}生成ML-DSA-65密钥对 / Generate ML-DSA-65 Keys  ... ${none}" | tee -a "$LOG_FILE"
+    if [[ -z $mldsa65Seed || -z $mldsa65Verify ]]; then
+      # Generate keys using xray directly
+      log2file "mldsa65Seed mldsa65Verify 没有指定，自动生成 / Generating mldsa65keys"
+      mldsa65keys=$(xray mldsa65)
+      mldsa65Seed=$(echo "$mldsa65keys" | awk '/Seed:/ {print $2}')
+      mldsa65Verify=$(echo "$mldsa65keys" | awk '/Verify:/ {print $2}')
+      log2file "私钥 (PrivateKey) = ${cyan}${mldsa65Seed}${none}"
+      log2file "公钥 (PublicKey) = ${cyan}${mldsa65Verify}${none}" 
+    fi
+    echo -e "[${green}OK${none}]" | tee -a  "$LOG_FILE"
+    
     # 目标网站
     if [[ -z $domain ]]; then
-      [ -z "$domain" ] && domain="learn.microsoft.com"
-      log2file "SNI = ${cyan}$domain${none}"
+      domain="www.yahoo.com"
+    else
+      log2file "用户指定了自己的SNI"
     fi
+
 
     log2file "网络栈netstack = ${cyan}${netstack}${none}" 
     log2file "本机IP = ${cyan}${ip}${none}"
@@ -308,9 +340,9 @@ configure_xray() {
     echo -n -e "${yellow}快好了，手搓 / Configuring /usr/local/etc/xray/config.json ... ${none}"
     cat > /usr/local/etc/xray/config.json <<-EOF
 { // VLESS + Reality
-  "log2file": {
-    "access": "/var/log2file/xray/access.log2file",
-    "error": "/var/log2file/xray/error.log2file",
+  "log": {
+    "access": "/var/log/xray/access.log",
+    "error": "/var/log/xray/error.log",
     "loglevel": "warning"
   },
   "inbounds": [
@@ -353,6 +385,7 @@ configure_xray() {
           "xver": 0,
           "serverNames": ["${domain}"],    // ***
           "privateKey": "${private_key}",    // ***私钥
+          "mldsa65Seed": "${mldsa65Seed}", // for xray 250724 and above
           "shortIds": ["${shortid}"]    // ***
         }
       },
@@ -409,22 +442,22 @@ configure_xray() {
   "routing": {
     "domainStrategy": "IPIfNonMatch",
     "rules": [
-// [routing-rule]
-//{
-//   "type": "field",
-//   "domain": ["geosite:google", "geosite:openai"],  // ***
-//   "outboundTag": "force-ipv6"  // force-ipv6 // force-ipv4 // socks5-warp
-//},
-//{
-//   "type": "field",
-//   "domain": ["geosite:cn"],  // ***
-//   "outboundTag": "force-ipv6"  // force-ipv6 // force-ipv4 // socks5-warp // blocked
-//},
-//{
-//   "type": "field",
-//   "ip": ["geoip:cn"],  // ***
-//   "outboundTag": "force-ipv6"  // force-ipv6 // force-ipv4 // socks5-warp // blocked
-//},
+//      [routing-rule]
+//      {
+//        "type": "field",
+//        "domain": ["geosite:google", "geosite:openai"],  // ***
+//        "outboundTag": "socks5-warp"  // force-ipv6 // force-ipv4 // socks5-warp
+//      },
+      {
+        "type": "field",
+        "domain": ["geosite:cn"],  // ***
+        "outboundTag": "blocked"  // force-ipv6 // force-ipv4 // socks5-warp // blocked
+      },
+      {
+        "type": "field",
+        "ip": ["geoip:cn"],  // ***
+        "outboundTag": "blocked"  // force-ipv6 // force-ipv4 // socks5-warp // blocked
+      },
       {
         "type": "field",
         "ip": ["geoip:private"],
@@ -476,12 +509,14 @@ output_results() {
     log2file "公钥 / PublicKey = ${cyan}${public_key}${none}"
     log2file "ShortId = ${cyan}${shortid}${none}"
     log2file "SpiderX = ${cyan}${spiderx}${none}"
+    log2file "mldsa65Seed = ${cyan}${mldsa65Seed}${none}"
+    log2file "mldsa65Verify = ${cyan}${mldsa65Verify}${none}"
 
     if [[ $netstack == "6" ]]; then
       ip=[$ip]
     fi
     
-    vless_reality_url="vless://${uuid}@${ip}:${port}?flow=xtls-rprx-vision&encryption=none&type=tcp&security=reality&sni=${domain}&fp=${fingerprint}&pbk=${public_key}&sid=${shortid}&spx=${spiderx}&#NOKEY_${ip}"
+    vless_reality_url="vless://${uuid}@${ip}:${port}?flow=xtls-rprx-vision&encryption=none&type=tcp&security=reality&sni=${domain}&fp=${fingerprint}&pbk=${public_key}&sid=${shortid}&pqv=${mldsa65Verify}&spx=${spiderx}&#NOKEY_${ip}"
 
     log2file "${yellow}二维码生成命令: / For QR code, run: ${none}" 
     log2file "qrencode -t UTF8 -r $URL_FILE" | tee -a "$LOG_FILE"
