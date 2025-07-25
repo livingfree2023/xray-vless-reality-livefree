@@ -89,7 +89,7 @@ install_dependencies() {
     # Fallback detection using which
     if [[ -z "$manager" ]]; then
         for candidate in "${!os_package_command[@]}"; do
-            if command -v "$candidate" >/dev/null 2>&1; then
+            if command -v "$candidate" > /dev/null 2>&1; then
                 manager=$candidate
                 log2file "found manager $manager in fallback"
                 break
@@ -106,7 +106,7 @@ install_dependencies() {
 
     # Check for missing tools
     for tool in "${tools[@]}"; do
-        if ! command -v "$tool" >/dev/null 2>&1; then
+        if ! command -v "$tool" > /dev/null 2>&1; then
             log2file "$tool is missing"
             eval "$install_cmd" "$tool"  >> "$LOG_FILE" 2>&1
         fi
@@ -164,7 +164,7 @@ enable_bbr() {
     sed -i '/net.core.default_qdisc/d' /etc/sysctl.conf
     echo "net.ipv4.tcp_congestion_control = bbr" >> /etc/sysctl.conf
     echo "net.core.default_qdisc = fq" >> /etc/sysctl.conf
-    sysctl -p >/dev/null 2>&1
+    sysctl -p >> "$LOG_FILE" 2>&1
     echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
 
 }
@@ -489,7 +489,7 @@ output_results() {
     echo -e -n "${yellow}检查服务状态 / Checking Service ... ${none}" | tee -a "$LOG_FILE"
 
     if [ "$ID" = "alpine" ] || [ "$ID_LIKE" = "alpine" ]; then
-      if rc-service "$SERVICE_NAME_ALPINE" status >/dev/null 2>&1; then 
+      if rc-service "$SERVICE_NAME_ALPINE" status >> "$LOG_FILE" 2>&1; then 
           echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
       else
         error "[服务未运行 / Service is not active]" 
