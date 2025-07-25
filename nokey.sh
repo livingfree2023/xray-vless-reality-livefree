@@ -5,6 +5,7 @@
 readonly SCRIPT_VERSION="20250723" 
 readonly LOG_FILE="nokey.log"
 readonly URL_FILE="nokey.url"
+readonly URL_FILE_SHORT="nokey_short.url"
 #readonly DEFAULT_PORT=443
 readonly DEFAULT_DOMAIN="learn.microsoft.com"
 readonly GITHUB_URL="https://github.com/livingfree2023/xray-vless-reality-nokey"
@@ -24,6 +25,7 @@ readonly yellow='\e[93m'
 readonly magenta='\e[95m'
 readonly cyan='\e[96m'
 readonly none='\e[0m'
+
 
 # Initialize log2file file
 echo > "$LOG_FILE"
@@ -46,6 +48,53 @@ check_root() {
         error "Error: Please run as root / 错误: 请以root身份运行此脚本: ${red}sudo -i${none}"
         exit 1
     fi
+}
+
+
+# Define the alias line
+alias_line="alias nokey='bash -c \"\$(curl -sL https://raw.githubusercontent.com/livingfree2023/xray-vless-reality-nokey/refs/heads/main/nokey.sh)\" @'"
+
+# Array of potential shell config files
+config_files=(
+    "$HOME/.bashrc"
+    "$HOME/.bash_profile"
+    "$HOME/.zshrc"
+    "$HOME/.profile"
+    "$HOME/.config/fish/config.fish"
+)
+
+# Function to add alias to a file if not already present
+add_alias_if_missing() {
+    echo -n -e "${yellow}添加nokey别名 / Add nokey alias to env ... ${none}" | tee -a "$LOG_FILE"
+    for file in "${config_files[@]}"; do
+      if [ -f "$file" ]; then
+          if ! grep -Fxq "$alias_line" "$file"; then
+              echo "$alias_line" >> "$file"
+              log2file "\nAdded alias to $file"
+          else
+              log2file "Alias already present in $file"
+          fi
+      fi
+    done
+    echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
+
+}
+
+# Function to remove alias from files
+remove_alias() {
+    echo -n -e "${yellow}删除nokey别名 / Remove nokey alias from env ... ${none}" | tee -a "$LOG_FILE"
+    for file in "${config_files[@]}"; do
+        if [ -f "$file" ]; then
+            if grep -Fxq "$alias_line" "$file"; then
+                sed -i.bak "/$(echo "$alias_line" | sed 's/[\/&]/\\&/g')/d" "$file"
+                echo "Removed alias from $file (backup created as $file.bak)"
+            else
+                echo "Alias not found in $file"
+            fi
+        fi
+    done
+    log2file "\nUninstallation complete."
+    echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
 }
 
 detect_network_interfaces() {
@@ -91,7 +140,7 @@ install_dependencies() {
         for candidate in "${!os_package_command[@]}"; do
             if command -v "$candidate" > /dev/null 2>&1; then
                 manager=$candidate
-                log2file "found manager $manager in fallback"
+                log2file "\nfound manager $manager in fallback"
                 break
             fi
         done
@@ -117,16 +166,20 @@ install_dependencies() {
 }
 
 install_xray() {
-    echo -n -e "${yellow}开始，安装XRAY / Install XRAY ... ${none}" | tee -a "$LOG_FILE"
+    if [[ $force_reinstall == 1 ]]; then
+      uninstall_xray
+    fi
+
+    echo -n -e "${yellow}开始，安装或升级XRAY / Install or upgrade XRAY ... ${none}" | tee -a "$LOG_FILE"
     
     if [ "$ID" = "alpine" ] || [ "$ID_LIKE" = "alpine" ]; then
-      log2file "Alpine OS: install xray formal release, alpine install script does not support pre-release"
+      log2file "\nAlpine OS: install xray formal release, alpine install script does not support pre-release"
       ash $GITHUB_XRAY_OFFICIAL_SCRIPT >> $LOG_FILE 2>&1
       rc-update add xray               >> $LOG_FILE 2>&1
       rc-service xray start            >> $LOG_FILE 2>&1
     else
-      log2file "Installing latest xray including pre-release"
-      bash $GITHUB_XRAY_OFFICIAL_SCRIPT install --beta  >> "$LOG_FILE" 2>&1
+      log2file "\nInstalling latest xray including pre-release"
+      bash $GITHUB_XRAY_OFFICIAL_SCRIPT install  >> "$LOG_FILE" 2>&1
     fi
 
     echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
@@ -148,7 +201,7 @@ uninstall_xray() {
     echo -n -e "${yellow}什么？要卸载重装？ / Force Reinstall ... ${none}" | tee -a "$LOG_FILE"
     
     if [ "$ID" = "alpine" ] || [ "$ID_LIKE" = "alpine" ]; then
-      log2file "Alpine OS: uninstall xray"
+      log2file "\nAlpine OS: uninstall xray"
       uninstall_in_alpine
     else
       bash $GITHUB_XRAY_OFFICIAL_SCRIPT remove --purge >> "$LOG_FILE" 2>&1
@@ -227,6 +280,21 @@ parse_args() {
         --uuid=*)
           uuid="${arg#*=}"
           ;;
+        --mldsa65Seed=*)
+          mldsa65Seed="${arg#*=}"
+          ;;
+        --mldsa65Verify=*)
+          mldsa65Verify="${arg#*=}"
+          ;;
+        --shortid=*)
+          shortid="${arg#*=}"
+          ;;
+        --remove)
+          remove_alias
+          uninstall_xray
+          echo -e "${yellow}卸载完成 / Uninstallation complete ... ${none}[${green}OK${none}]"
+          exit 0
+          ;;
         *)
           error "Unknown option / 什么鬼参数: $arg"
           show_help
@@ -255,7 +323,6 @@ configure_xray() {
         exit 1
       fi
     fi
-    log2file "使用ip $ip" 
     echo -e "[${green}OK:$ip${none}]" | tee -a  "$LOG_FILE"
 
     # 端口
@@ -265,11 +332,10 @@ configure_xray() {
       for i in $(seq 0 1000); do
         port=$((base + i))
         nc -z 127.0.0.1 $port 2>/dev/null || {
-          echo "$port" >> "$LOG_FILE"
           break
         }
       done
-      log2file "找到一个空闲随机端口，如果有防火墙需要放行 / Random unused port found, if firewall enabled, add tcp rules for: ${cyan}$port${none}"
+      log2file "\n找到一个空闲随机端口，如果有防火墙需要放行 / Random unused port found, if firewall enabled, add tcp rules for: ${cyan}$port${none}"
     fi
     echo -e "[${green}OK:$port${none}]" | tee -a  "$LOG_FILE"
 
@@ -287,7 +353,7 @@ configure_xray() {
       keys=$(xray x25519)
       private_key=$(echo "$keys" | awk '/Private key:/ {print $3}')
       public_key=$(echo "$keys" | awk '/Public key:/ {print $3}')
-      log2file "私钥 (PrivateKey) = ${cyan}${private_key}${none}"
+      log2file "\n私钥 (PrivateKey) = ${cyan}${private_key}${none}"
       log2file "公钥 (PublicKey) = ${cyan}${public_key}${none}" 
     fi
     echo -e "[${green}OK${none}]" | tee -a  "$LOG_FILE"
@@ -297,7 +363,7 @@ configure_xray() {
     echo -n -e "${yellow}生成一个shortid / Generate shortid  ... ${none}" | tee -a "$LOG_FILE"
     if [[ -z $shortid ]]; then
       shortid=$(generate_shortid)
-      log2file "ShortID = ${cyan}${shortid}${none}" 
+      log2file "\nShortID = ${cyan}${shortid}${none}" 
     fi
     echo -e "[${green}OK${none}]" | tee -a  "$LOG_FILE"
 
@@ -311,7 +377,7 @@ configure_xray() {
     echo -n -e "${yellow}生成ML-DSA-65密钥对 / Generate ML-DSA-65 Keys  ... ${none}" | tee -a "$LOG_FILE"
     if [[ -z $mldsa65Seed || -z $mldsa65Verify ]]; then
       # Generate keys using xray directly
-      log2file "mldsa65Seed mldsa65Verify 没有指定，自动生成 / Generating mldsa65keys"
+      log2file "\nmldsa65Seed mldsa65Verify 没有指定，自动生成 / Generating mldsa65keys"
       mldsa65keys=$(xray mldsa65)
       mldsa65Seed=$(echo "$mldsa65keys" | awk '/Seed:/ {print $2}')
       mldsa65Verify=$(echo "$mldsa65keys" | awk '/Verify:/ {print $2}')
@@ -322,9 +388,10 @@ configure_xray() {
     
     # 目标网站
     if [[ -z $domain ]]; then
+      log2file "用户没有指定自己的SNI，使用默认 / User did not specify SNI, using default"
       domain="www.yahoo.com"
     else
-      log2file "用户指定了自己的SNI"
+      log2file "用户指定了自己的SNI / User specified SNI: ${cyan}${domain}${none}"
     fi
 
 
@@ -334,139 +401,141 @@ configure_xray() {
     log2file "用户UUID = $cyan${uuid}${none}" 
     log2file "域名SNI = ${cyan}$domain${none}" 
 
-
-    # 配置config.json
-    
-    echo -n -e "${yellow}快好了，手搓 / Configuring /usr/local/etc/xray/config.json ... ${none}"
-    cat > /usr/local/etc/xray/config.json <<-EOF
-{ // VLESS + Reality
-  "log": {
-    "access": "/var/log/xray/access.log",
-    "error": "/var/log/xray/error.log",
-    "loglevel": "warning"
-  },
-  "inbounds": [
-    // [inbound] 如果你想使用其它翻墙服务端如(HY2或者NaiveProxy)对接v2ray的分流规则, 那么取消下面一段的注释, 并让其它翻墙服务端接到下面这个socks 1080端口
-    // {
-    //   "listen":"127.0.0.1",
-    //   "port":1080,
-    //   "protocol":"socks",
-    //   "sniffing":{
-    //     "enabled":true,
-    //     "destOverride":[
-    //       "http",
-    //       "tls"
-    //     ]
-    //   },
-    //   "settings":{
-    //     "auth":"noauth",
-    //     "udp":false
-    //   }
-    // },
-    {
-      "listen": "0.0.0.0",
-      "port": ${port},    // ***
-      "protocol": "vless",
-      "settings": {
-        "clients": [
+    reality_template=$(cat <<-EOF
+      { // VLESS + Reality
+        "log": {
+          "access": "/var/log/xray/access.log",
+          "error": "/var/log/xray/error.log",
+          "loglevel": "warning"
+        },
+        "inbounds": [
+          // [inbound] 如果你想使用其它翻墙服务端如(HY2或者NaiveProxy)对接v2ray的分流规则, 那么取消下面一段的注释, 并让其它翻墙服务端接到下面这个socks 1080端口
+          // {
+          //   "listen":"127.0.0.1",
+          //   "port":1080,
+          //   "protocol":"socks",
+          //   "sniffing":{
+          //     "enabled":true,
+          //     "destOverride":[
+          //       "http",
+          //       "tls"
+          //     ]
+          //   },
+          //   "settings":{
+          //     "auth":"noauth",
+          //     "udp":false
+          //   }
+          // },
           {
-            "id": "${uuid}",    // ***
-            "flow": "xtls-rprx-vision"
+            "listen": "0.0.0.0",
+            "port": ${port},    // ***
+            "protocol": "vless",
+            "settings": {
+              "clients": [
+                {
+                  "id": "${uuid}",    // ***
+                  "flow": "xtls-rprx-vision"
+                }
+              ],
+              "decryption": "none"
+            },
+            "streamSettings": {
+              "network": "tcp",
+              "security": "reality",
+              "realitySettings": {
+                "show": false,
+                "dest": "${domain}:443",    // ***
+                "xver": 0,
+                "serverNames": ["${domain}"],    // ***
+                "privateKey": "${private_key}",    // ***私钥
+                "mldsa65Seed": "${mldsa65Seed}", // for xray 250724 and above
+                "shortIds": ["${shortid}"]    // ***
+              }
+            },
+            "sniffing": {
+              "enabled": true,
+              "destOverride": ["http", "tls", "quic"]
+            }
           }
         ],
-        "decryption": "none"
+        "outbounds": [
+          {
+            "protocol": "freedom",
+            "tag": "direct"
+          },
+      // [outbound]
+      {
+          "protocol": "freedom",
+          "settings": {
+              "domainStrategy": "UseIPv4"
+          },
+          "tag": "force-ipv4"
       },
-      "streamSettings": {
-        "network": "tcp",
-        "security": "reality",
-        "realitySettings": {
-          "show": false,
-          "dest": "${domain}:443",    // ***
-          "xver": 0,
-          "serverNames": ["${domain}"],    // ***
-          "privateKey": "${private_key}",    // ***私钥
-          "mldsa65Seed": "${mldsa65Seed}", // for xray 250724 and above
-          "shortIds": ["${shortid}"]    // ***
+      {
+          "protocol": "freedom",
+          "settings": {
+              "domainStrategy": "UseIPv6"
+          },
+          "tag": "force-ipv6"
+      },
+      {
+          "protocol": "socks",
+          "settings": {
+              "servers": [{
+                  "address": "127.0.0.1",
+                  "port": 40000 //warp socks5 port
+              }]
+          },
+          "tag": "socks5-warp"
+      },
+          {
+            "protocol": "blackhole",
+            "tag": "block"
+          }
+        ],
+        "dns": {
+          "servers": [
+            "8.8.8.8",
+            "1.1.1.1",
+            "2001:4860:4860::8888",
+            "2606:4700:4700::1111",
+            "localhost"
+          ]
+        },
+        "routing": {
+          "domainStrategy": "IPIfNonMatch",
+          "rules": [
+      //      [routing-rule]
+      //      {
+      //        "type": "field",
+      //        "domain": ["geosite:google", "geosite:openai"],  // ***
+      //        "outboundTag": "socks5-warp"  // force-ipv6 // force-ipv4 // socks5-warp
+      //      },
+            {
+              "type": "field",
+              "domain": ["geosite:cn"],  // ***
+              "outboundTag": "blocked"  // force-ipv6 // force-ipv4 // socks5-warp // blocked
+            },
+            {
+              "type": "field",
+              "ip": ["geoip:cn"],  // ***
+              "outboundTag": "blocked"  // force-ipv6 // force-ipv4 // socks5-warp // blocked
+            },
+            {
+              "type": "field",
+              "ip": ["geoip:private"],
+              "outboundTag": "block"
+            }
+          ]
         }
-      },
-      "sniffing": {
-        "enabled": true,
-        "destOverride": ["http", "tls", "quic"]
       }
-    }
-  ],
-  "outbounds": [
-    {
-      "protocol": "freedom",
-      "tag": "direct"
-    },
-// [outbound]
-{
-    "protocol": "freedom",
-    "settings": {
-        "domainStrategy": "UseIPv4"
-    },
-    "tag": "force-ipv4"
-},
-{
-    "protocol": "freedom",
-    "settings": {
-        "domainStrategy": "UseIPv6"
-    },
-    "tag": "force-ipv6"
-},
-{
-    "protocol": "socks",
-    "settings": {
-        "servers": [{
-            "address": "127.0.0.1",
-            "port": 40000 //warp socks5 port
-        }]
-    },
-    "tag": "socks5-warp"
-},
-    {
-      "protocol": "blackhole",
-      "tag": "block"
-    }
-  ],
-  "dns": {
-    "servers": [
-      "8.8.8.8",
-      "1.1.1.1",
-      "2001:4860:4860::8888",
-      "2606:4700:4700::1111",
-      "localhost"
-    ]
-  },
-  "routing": {
-    "domainStrategy": "IPIfNonMatch",
-    "rules": [
-//      [routing-rule]
-//      {
-//        "type": "field",
-//        "domain": ["geosite:google", "geosite:openai"],  // ***
-//        "outboundTag": "socks5-warp"  // force-ipv6 // force-ipv4 // socks5-warp
-//      },
-      {
-        "type": "field",
-        "domain": ["geosite:cn"],  // ***
-        "outboundTag": "blocked"  // force-ipv6 // force-ipv4 // socks5-warp // blocked
-      },
-      {
-        "type": "field",
-        "ip": ["geoip:cn"],  // ***
-        "outboundTag": "blocked"  // force-ipv6 // force-ipv4 // socks5-warp // blocked
-      },
-      {
-        "type": "field",
-        "ip": ["geoip:private"],
-        "outboundTag": "block"
-      }
-    ]
-  }
-}
 EOF
+    )
+    # 配置config.json
+    echo -n -e "${yellow}快好了，手搓 / Configuring /usr/local/etc/xray/config.json ... ${none}"
+    # TODO: add multiple templates for different protocols
+    echo "$reality_template" > /usr/local/etc/xray/config.json
+    
     echo -e "[${green}OK${none}]" | tee -a "$LOG_FILE"
     # 重启 Xray
     echo -n -e "${yellow}冲刺，开启服务 / Starting Service ... ${none}"
@@ -484,11 +553,15 @@ show_help() {
   echo "  --port=NUMBER      设置端口号 (默认: 随机) / Set port number"
   echo "  --domain=DOMAIN    设置SNI域名 (默认: learn.microsoft.com) / Set SNI domain"
   echo "  --uuid=STRING      设置UUID (默认: 自动生成) / Set UUID"
+  echo "  --mldsa65Seed=STRING  设置ML-DSA-65私钥 (默认: 自动生成) / Set ML-DSA-65 private key"
+  echo "  --mldsa65Verify=STRING  设置ML-DSA-65公钥 (默认: 自动生成) / Set ML-DSA-65 public key"
   echo "  --force            强制重装 / Force Reinstall"
+  echo "  --remove           卸载Xray和NoKey / Uninstall Xray and NoKey"
   echo "  --help             显示此帮助信息 / Show this help message"
 
   exit 0
 }
+
 
 output_results() {
     # 指纹FingerPrint
@@ -517,8 +590,9 @@ output_results() {
     fi
     
     vless_reality_url="vless://${uuid}@${ip}:${port}?flow=xtls-rprx-vision&encryption=none&type=tcp&security=reality&sni=${domain}&fp=${fingerprint}&pbk=${public_key}&sid=${shortid}&pqv=${mldsa65Verify}&spx=${spiderx}&#NOKEY_${ip}"
+    vless_reality_url_short="vless://${uuid}@${ip}:${port}?flow=xtls-rprx-vision&encryption=none&type=tcp&security=reality&sni=${domain}&fp=${fingerprint}&pbk=${public_key}&sid=${shortid}#NOKEY_${ip}"
 
-    log2file "${yellow}二维码生成命令: / For QR code, run: ${none}" 
+    log2file "${yellow}二维码生成命令: / For QR code, install qrencode and run: ${none}" 
     log2file "qrencode -t UTF8 -r $URL_FILE" | tee -a "$LOG_FILE"
 
     echo -e -n "${yellow}检查服务状态 / Checking Service ... ${none}" | tee -a "$LOG_FILE"
@@ -545,11 +619,11 @@ output_results() {
     
     echo -e "${yellow}舒服了 / Done: ${none}" | tee -a "$LOG_FILE"
 
-    echo -e "${magenta}"
-    echo -e "${vless_reality_url}" | tee -a "$LOG_FILE" | tee "$URL_FILE"
-    echo -e "${none}"
+    echo -e "${yellow}完整含mldsa65Verify:${none}"   | tee -a "$LOG_FILE"
+    echo -e "${magenta}${vless_reality_url}${none}" | tee -a "$LOG_FILE" | tee "$URL_FILE"
+    echo -e "${yellow}简短不含mldsa65Verify:${none}" | tee -a "$LOG_FILE"
+    echo -e "${magenta}${vless_reality_url_short}${none}" | tee -a "$LOG_FILE" | tee "$URL_FILE_SHORT"
     
-
 }
 
 download_official_script() {
@@ -561,7 +635,7 @@ download_official_script() {
 
     if [ "$ID" = "alpine" ] || [ "$ID_LIKE" = "alpine" ]; then
         url="$GITHUB_XRAY_OFFICIAL_SCRIPT_ALPINE_URL"
-        log2file "Alpine OS detected"        
+        log2file "\nAlpine OS detected"        
     fi    
 
     curl -sL "$url" -o "$GITHUB_XRAY_OFFICIAL_SCRIPT" >> "$LOG_FILE" 2>&1
@@ -591,19 +665,16 @@ main() {
     show_banner
     install_dependencies # the next function needs curl, in debian 9 curl is not shipped
     download_official_script
-
     detect_network_interfaces
     parse_args "$@"
-    
-    if [[ $force_reinstall == 1 ]]; then
-      uninstall_xray
-    fi
-
     install_xray
     configure_xray
     enable_bbr
+    add_alias_if_missing
     output_results
-    echo -e "${yellow}总用时 / Elapsed Time:${none}  ${cyan}$SECONDS 秒${none}"
+    echo -e "${yellow}总用时 / Elapsed Time:${none}  ${cyan}$SECONDS 秒${none}" 
+    echo -e "${yellow}日志文件 / Log File:${none}  ${cyan}$LOG_FILE${none}"
+    echo -e "${yellow}下次可以直接用别名${none}${cyan}nokey${none}${yellow}启动本脚本${none}"
     echo -e "---------- ${cyan}live free or die hard${none} -------------" | tee -a "$LOG_FILE"
 }
 
