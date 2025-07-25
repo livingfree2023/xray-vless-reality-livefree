@@ -26,7 +26,7 @@
 7. 可带参数指定协议栈，UUID，SNI，端口
 8. 可查看帮助 --help
 9. 只输出极简步骤，详细log输出到log文件
-10. 支持X25519，为此安装最新的pre-release了，但是官方脚本没有给alpine参数去下prerelease，会玩的请自行折腾
+10. 支持X25519
 11. 暂时想到这么多……
 
 > 已测试包括：ubuntu22/debian11/Rocky9.2/CentOS7.6/Fedora30/Alma9.2/alpine3.22，欢迎测试提issue或者报告成功结果
