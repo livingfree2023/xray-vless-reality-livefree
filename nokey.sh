@@ -7,7 +7,7 @@ readonly LOG_FILE="nokey.log"
 readonly URL_FILE="nokey.url"
 readonly URL_FILE_SHORT="nokey_short.url"
 #readonly DEFAULT_PORT=443
-readonly DEFAULT_DOMAIN="learn.microsoft.com"
+readonly DEFAULT_DOMAIN="www.yahoo.com"
 readonly GITHUB_URL="https://github.com/livingfree2023/xray-vless-reality-nokey"
 readonly GITHUB_CMD="bash <(curl -sL https://raw.githubusercontent.com/livingfree2023/xray-vless-reality-livefree/refs/heads/main/nokey.sh)"
 readonly SERVICE_NAME="xray.service"
@@ -389,7 +389,7 @@ configure_xray() {
     # 目标网站
     if [[ -z $domain ]]; then
       log2file "用户没有指定自己的SNI，使用默认 / User did not specify SNI, using default"
-      domain="www.yahoo.com"
+      domain="$DEFAULT_DOMAIN"
     else
       log2file "用户指定了自己的SNI / User specified SNI: ${cyan}${domain}${none}"
     fi
